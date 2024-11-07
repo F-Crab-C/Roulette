@@ -102,15 +102,15 @@ public class GameManager {
 
             plugin.getEconomy().depositPlayer(player, winAmount);
             player.sendMessage("§a축하합니다! " + result.getDisplayName() + "§a이(가) 나왔습니다!");
-            player.sendMessage("§a상금 " + String.format("%,d", (long)winAmount) + "원을 획득하셨습니다!");
+            player.sendMessage("§a상금 " + String.format("%,d", (long) winAmount) + "원을 획득하셨습니다!");
             player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
         } else {
             player.sendMessage("§c아쉽습니다. " + result.getDisplayName() + "§c이(가) 나왔습니다.");
             player.sendMessage("§c다음 기회를 노려보세요!");
             player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
         }
-
-        // 베팅 정보 초기화
-        playerBets.remove(playerUUID);
+    }
+    public PlayerBet getPlayerBet(UUID playerUUID) {
+        return playerBets.get(playerUUID);
     }
 }
