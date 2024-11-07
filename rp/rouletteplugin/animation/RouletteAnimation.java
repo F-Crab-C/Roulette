@@ -5,6 +5,7 @@ import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.entity.ArmorStand;
@@ -157,38 +158,18 @@ public class RouletteAnimation {
         }
     }
 
-    private void spawnParticles(Location center) {
-        center.getWorld().spawnParticle(Particle.SPELL_WITCH, center, 20, 0.5, 0.5, 0.5, 0);
-    }
+    public void showWinHologram(Player player, double amount) {
+        Location loc = player.getLocation().add(0, 2, 0);
+        ArmorStand hologram1 = loc.getWorld().spawn(loc, ArmorStand.class);
+        ArmorStand hologram2 = loc.getWorld().spawn(loc.add(0, 0.3, 0), ArmorStand.class);
 
-    public void playWinAnimation(Player player, RouletteColor color) {
-        Location loc = player.getLocation();
+        hologram1.setCustomName("§a우승하셨습니다!");
+        hologram2.setCustomName("§e+" + String.format("%,d", (long)amount) + "원");
 
-        new BukkitRunnable() {
-            private int tick = 0;
-
-            @Override
-            public void run() {
-                if (tick >= 20) {
-                    this.cancel();
-                    return;
-                }
-
-                // 색상별 파티클 효과
-                switch (color) {
-                    case RED:
-                        loc.getWorld().spawnParticle(Particle.REDSTONE, loc, 50, 1, 1, 1, 0);
-                        break;
-                    case BLACK:
-                        loc.getWorld().spawnParticle(Particle.SMOKE_NORMAL, loc, 50, 1, 1, 1, 0);
-                        break;
-                    case GREEN:
-                        loc.getWorld().spawnParticle(Particle.VILLAGER_HAPPY, loc, 50, 1, 1, 1, 0);
-                        break;
-                }
-
-                tick++;
-            }
-        }.runTaskTimer(plugin, 0L, 1L);
+        // 3초 후 제거
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            hologram1.remove();
+            hologram2.remove();
+        }, 60L);
     }
 }

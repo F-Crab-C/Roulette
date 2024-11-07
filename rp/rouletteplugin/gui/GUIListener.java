@@ -4,6 +4,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -25,6 +26,10 @@ public class GUIListener implements Listener {
     public void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player)) return;
 
+        if(event.getView().getTitle().contains("룰렛")) {
+            event.setCancelled(true);
+        }
+
         Player player = (Player) event.getWhoClicked();
         ItemStack clickedItem = event.getCurrentItem();
         String title = event.getView().getTitle();
@@ -43,6 +48,12 @@ public class GUIListener implements Listener {
         // 색상 선택
         else if (title.equals("§f§l색상 선택")) {
             handleColorSelection(player, clickedItem);
+        }
+    }
+
+    public void onInventoryDrag(InventoryDragEvent event) {
+        if(event.getView().getTitle().contains("룰렛")) {
+            event.setCancelled(true);
         }
     }
 
@@ -118,6 +129,8 @@ public class GUIListener implements Listener {
             gameManager.setPlayerBetColor(player.getUniqueId(), selectedColor);
             player.sendMessage("§a" + selectedColor.getDisplayName() + " §f색상을 선택했습니다.");
             player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
+
+            // 메인 GUI로 돌아갈 때 현재 선택된 정보 표시
             plugin.getRouletteGUI().openMainGUI(player);
         }
     }
