@@ -7,19 +7,14 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.Material;
 import org.bukkit.Sound;
+import org.bukkit.ChatColor;
 import rp.rouletteplugin.Main;
 import rp.rouletteplugin.game.GameManager;
 import rp.rouletteplugin.game.RouletteColor;
-import org.bukkit.ChatColor;
 
 public class GUIListener implements Listener {
     private final Main plugin;
     private final GameManager gameManager;
-
-    // GUI 식별용 상수
-    private static final String MAIN_GUI_TITLE = "§6§l룰렛 게임";
-    private static final String AMOUNT_GUI_TITLE = "§e§l베팅 금액 설정";
-    private static final String COLOR_GUI_TITLE = "§f§l색상 선택";
 
     public GUIListener(Main plugin, GameManager gameManager) {
         this.plugin = plugin;
@@ -32,60 +27,46 @@ public class GUIListener implements Listener {
 
         Player player = (Player) event.getWhoClicked();
         ItemStack clickedItem = event.getCurrentItem();
+        String title = event.getView().getTitle();
 
         if (clickedItem == null) return;
         event.setCancelled(true);
 
-        String title = event.getView().getTitle();
-
-        if (title.equals(MAIN_GUI_TITLE)) {
-            handleMainGUIClick(player, clickedItem, event.getSlot());
+        // 메인 메뉴
+        if (title.equals("§6§l룰렛 게임")) {
+            handleMainMenu(player, clickedItem);
         }
-        else if (title.equals(AMOUNT_GUI_TITLE)) {
-            handleAmountGUIClick(player, clickedItem);
+        // 베팅 금액 설정
+        else if (title.equals("§e§l베팅 금액 설정")) {
+            handleBettingAmount(player, clickedItem);
         }
-        else if (title.equals(COLOR_GUI_TITLE)) {
-            handleColorGUIClick(player, clickedItem);
+        // 색상 선택
+        else if (title.equals("§f§l색상 선택")) {
+            handleColorSelection(player, clickedItem);
         }
     }
 
-    private void handleMainGUIClick(Player player, ItemStack clickedItem, int slot) {
-        switch (slot) {
-            case 11: // 베팅 금액 설정
-                openAmountGUI(player);
+    private void handleMainMenu(Player player, ItemStack clickedItem) {
+        switch (clickedItem.getType()) {
+            case GOLD_INGOT:
+                plugin.getRouletteGUI().openAmountGUI(player);
                 break;
-            case 13: // 색상 선택
-                openColorGUI(player);
+            case WHITE_WOOL:
+                if (gameManager.getPlayerBet(player.getUniqueId()) == null ||
+                        gameManager.getPlayerBet(player.getUniqueId()).getAmount() <= 0) {
+                    player.sendMessage("§c먼저 베팅 금액을 설정해주세요!");
+                    player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
+                    return;
+                }
+                plugin.getRouletteGUI().openColorGUI(player);
                 break;
-            case 15: // 게임 시작
+            case EMERALD:
                 startGame(player);
                 break;
         }
     }
 
-    private void openAmountGUI(Player player) {
-        // 베팅 금액 설정 GUI 열기
-        // 추후 구현
-    }
-
-    private void openColorGUI(Player player) {
-        // 색상 선택 GUI 열기
-        // 추후 구현
-    }
-
-    private void startGame(Player player) {
-        // 베팅 금액과 색상이 설정되었는지 확인
-        if (!gameManager.isPlayerBetComplete(player.getUniqueId())) {
-            player.sendMessage("§c베팅 금액과 색상을 모두 설정해주세요!");
-            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
-            return;
-        }
-
-        // 게임 시작
-        gameManager.startGame(player);
-    }
-
-    private void handleAmountGUIClick(Player player, ItemStack clickedItem) {
+    private void handleBettingAmount(Player player, ItemStack clickedItem) {
         if (clickedItem.getType() == Material.BARRIER) {
             plugin.getRouletteGUI().openMainGUI(player);
             return;
@@ -93,21 +74,19 @@ public class GUIListener implements Listener {
 
         if (clickedItem.getType() == Material.GOLD_INGOT) {
             String amountStr = ChatColor.stripColor(clickedItem.getItemMeta().getDisplayName())
-                    .replace("원", "");
+                    .replace("원", "").replace(",", "");
             try {
                 double amount = Double.parseDouble(amountStr);
 
-                // 플레이어의 보유 금액 확인
+                // 보유 금액 확인
                 if (plugin.getEconomy().getBalance(player) < amount) {
                     player.sendMessage("§c보유 금액이 부족합니다!");
                     player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
                     return;
                 }
 
-                // 여기에 setPlayerBetAmount 호출 추가
                 gameManager.setPlayerBetAmount(player.getUniqueId(), amount);
-
-                player.sendMessage("§a베팅 금액이 " + amount + "원으로 설정되었습니다.");
+                player.sendMessage("§a베팅 금액이 " + String.format("%,d", (long)amount) + "원으로 설정되었습니다.");
                 player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
                 plugin.getRouletteGUI().openMainGUI(player);
             } catch (NumberFormatException e) {
@@ -116,7 +95,7 @@ public class GUIListener implements Listener {
         }
     }
 
-    private void handleColorGUIClick(Player player, ItemStack clickedItem) {
+    private void handleColorSelection(Player player, ItemStack clickedItem) {
         if (clickedItem.getType() == Material.BARRIER) {
             plugin.getRouletteGUI().openMainGUI(player);
             return;
@@ -137,9 +116,19 @@ public class GUIListener implements Listener {
 
         if (selectedColor != null) {
             gameManager.setPlayerBetColor(player.getUniqueId(), selectedColor);
-            player.sendMessage("§a" + selectedColor.getDisplayName() + "§a색을 선택했습니다.");
+            player.sendMessage("§a" + selectedColor.getDisplayName() + " §f색상을 선택했습니다.");
             player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
             plugin.getRouletteGUI().openMainGUI(player);
         }
+    }
+
+    private void startGame(Player player) {
+        if (!gameManager.isPlayerBetComplete(player.getUniqueId())) {
+            player.sendMessage("§c베팅 금액과 색상을 모두 설정해주세요!");
+            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
+            return;
+        }
+
+        gameManager.startGame(player);
     }
 }
