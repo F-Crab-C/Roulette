@@ -14,6 +14,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import rp.rouletteplugin.Main;
+import rp.rouletteplugin.game.PlayerBet;
 import rp.rouletteplugin.game.RouletteColor;
 
 import static rp.rouletteplugin.gui.RouletteGUI.GUI_SIZE;
@@ -46,7 +47,13 @@ public class RouletteAnimation {
             @Override
             public void run() {
                 if (tick >= 40) {
-                    showResult(player, resultColor);
+                    // GameManager에서 베팅 정보를 가져와야 함
+                    PlayerBet bet = plugin.getGameManager().getPlayerBet(player.getUniqueId());
+                    double betAmount = bet != null ? bet.getAmount() : 0;
+                    double winAmount = bet != null && bet.getColor() == resultColor ?
+                            betAmount * (resultColor == RouletteColor.GREEN ? 14 : 2) : 0;
+
+                    showResult(player, resultColor, betAmount, winAmount);
                     onComplete.run();
                     this.cancel();
                     return;
