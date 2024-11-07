@@ -56,7 +56,7 @@ public class GameManager {
 
         isGameRunning = true;
 
-        // 룰렛 애니메이션 및 결과 처리
+        // 룰렛 결과 결정
         new BukkitRunnable() {
             private int ticks = 0;
             private final int ANIMATION_DURATION = 40; // 2초
@@ -70,7 +70,7 @@ public class GameManager {
                     return;
                 }
 
-                // 애니메이션 효과음
+                // 진행 중 효과음
                 if (ticks % 2 == 0) {
                     player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1, 1);
                 }
@@ -95,14 +95,14 @@ public class GameManager {
             result = RouletteColor.BLACK;
         }
 
-        // 결과 처리
+        // 결과 처리 및 상금 지급
         if (bet.getColor() == result) {
             double multiplier = (result == RouletteColor.GREEN) ? GREEN_MULTIPLIER : NORMAL_MULTIPLIER;
             double winAmount = bet.getAmount() * multiplier;
 
             plugin.getEconomy().depositPlayer(player, winAmount);
             player.sendMessage("§a축하합니다! " + result.getDisplayName() + "§a이(가) 나왔습니다!");
-            player.sendMessage("§a상금 " + winAmount + "원을 획득하셨습니다!");
+            player.sendMessage("§a상금 " + String.format("%,d", (long)winAmount) + "원을 획득하셨습니다!");
             player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
         } else {
             player.sendMessage("§c아쉽습니다. " + result.getDisplayName() + "§c이(가) 나왔습니다.");
@@ -112,9 +112,5 @@ public class GameManager {
 
         // 베팅 정보 초기화
         playerBets.remove(playerUUID);
-    }
-
-    public PlayerBet getPlayerBet(UUID playerUUID) {
-        return playerBets.get(playerUUID);
     }
 }
