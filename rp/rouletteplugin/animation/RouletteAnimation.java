@@ -98,52 +98,33 @@ public class RouletteAnimation {
     }
 
     private int getAnimationPosition(int pos) {
-        int[] path = {1,2,3,4,5,6,7,16,25,34,43,42,41,40,39,38,37,28,19,10};
+        int[] path = {1, 2, 3, 4, 5, 6, 7, 16, 25, 34, 43, 42, 41, 40, 39, 38, 37, 28, 19, 10};
         return path[pos % path.length];
     }
 
-    private void showResult(Player player, RouletteColor resultColor, double amount, boolean isWin) {
-        Location loc = player.getLocation().add(0, 1.5, 0);  // 높이 조정
+    public void showResult(Player player, RouletteColor resultColor, double betAmount, double winAmount) {
+        Location loc = player.getLocation().add(0, 1.5, 0);  // 높이 낮춤
         ArmorStand hologram1 = loc.getWorld().spawn(loc, ArmorStand.class);
         ArmorStand hologram2 = loc.getWorld().spawn(loc.add(0, 0.3, 0), ArmorStand.class);
 
-        if (isWin) {
+        hologram1.setVisible(false);
+        hologram2.setVisible(false);
+        hologram1.setGravity(false);
+        hologram2.setGravity(false);
+        hologram1.setCustomNameVisible(true);
+        hologram2.setCustomNameVisible(true);
+
+        if (winAmount > 0) {
+            // 승리
             hologram1.setCustomName("§a우승!");
-            hologram2.setCustomName("§e+" + String.format("%,d", (long)amount) + "원");
+            hologram2.setCustomName("§e+" + String.format("%,d", (long) winAmount) + "원");
         } else {
+            // 패배
             hologram1.setCustomName("§c패배");
-            hologram2.setCustomName("§c-" + String.format("%,d", (long)amount) + "원");
+            hologram2.setCustomName("§c-" + String.format("%,d", (long) betAmount) + "원");
         }
-    }
 
-    private void createHologram(Location location) {
-        hologram = location.getWorld().spawn(location, ArmorStand.class);
-        hologram.setVisible(false);
-        hologram.setGravity(false);
-        hologram.setCustomNameVisible(true);
-        hologram.setCustomName("§f룰렛 돌아가는 중...");
-    }
-
-    private void updateHologramText(String symbol) {
-        hologram.setCustomName("§f" + symbol);
-    }
-
-    private void removeHologram() {
-        if (hologram != null) {
-            hologram.remove();
-            hologram = null;
-        }
-    }
-
-    public void showWinHologram(Player player, double amount) {
-        Location loc = player.getLocation().add(0, 2, 0);
-        ArmorStand hologram1 = loc.getWorld().spawn(loc, ArmorStand.class);
-        ArmorStand hologram2 = loc.getWorld().spawn(loc.add(0, 0.3, 0), ArmorStand.class);
-
-        hologram1.setCustomName("§a우승하셨습니다!");
-        hologram2.setCustomName("§e+" + String.format("%,d", (long)amount) + "원");
-
-        // 3초 후 제거
+        // 3초 후 홀로그램 제거
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             hologram1.remove();
             hologram2.remove();

@@ -111,25 +111,33 @@ public class GameManager {
         }
     }
 
-    // determineResult 메서드 수정 (결과를 파라미터로 받도록)
     public void determineResult(Player player, RouletteColor result) {
         UUID playerUUID = player.getUniqueId();
         PlayerBet bet = playerBets.get(playerUUID);
+        RouletteAnimation animation = new RouletteAnimation(plugin);
 
         try {
             // 결과 처리 및 상금 지급
             if (bet.getColor() == result) {
+                // 승리한 경우
                 double multiplier = (result == RouletteColor.GREEN) ? GREEN_MULTIPLIER : NORMAL_MULTIPLIER;
                 double winAmount = bet.getAmount() * multiplier;
 
                 plugin.getEconomy().depositPlayer(player, winAmount);
                 player.sendMessage("§a축하합니다! " + result.getDisplayName() + "§a이(가) 나왔습니다!");
-                player.sendMessage("§a상금 " + String.format("%,d", (long)winAmount) + "원을 획득하셨습니다!");
+                player.sendMessage("§a상금 " + String.format("%,d", (long) winAmount) + "원을 획득하셨습니다!");
                 player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
+
+                // 승리 홀로그램 표시
+                animation.showResult(player, result, bet.getAmount(), winAmount);
             } else {
+                // 패배한 경우
                 player.sendMessage("§c아쉽습니다. " + result.getDisplayName() + "§c이(가) 나왔습니다.");
                 player.sendMessage("§c다음 기회를 노려보세요!");
                 player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
+
+                // 패배 홀로그램 표시 (winAmount를 0으로 설정하여 패배 표시)
+                animation.showResult(player, result, bet.getAmount(), 0);
             }
 
         } catch (Exception e) {
@@ -150,47 +158,5 @@ public class GameManager {
 
     public PlayerBet getPlayerBet(UUID playerUUID) {
         return playerBets.get(playerUUID);
-    }
-
-    private void determineResult(Player player) {
-        UUID playerUUID = player.getUniqueId();
-        PlayerBet bet = playerBets.get(playerUUID);
-
-        try {
-            // 결과 결정 (20% 확률로 초록, 40% 확률로 빨강과 검정)
-            int randomNum = random.nextInt(100);
-            RouletteColor result;
-            if (randomNum < 20) {
-                result = RouletteColor.GREEN;
-            } else if (randomNum < 60) {
-                result = RouletteColor.RED;
-            } else {
-                result = RouletteColor.BLACK;
-            }
-
-            // 결과 처리 및 상금 지급
-            if (bet.getColor() == result) {
-                double multiplier = (result == RouletteColor.GREEN) ? GREEN_MULTIPLIER : NORMAL_MULTIPLIER;
-                double winAmount = bet.getAmount() * multiplier;
-
-                plugin.getEconomy().depositPlayer(player, winAmount);
-                player.sendMessage("§a축하합니다! " + result.getDisplayName() + "§a이(가) 나왔습니다!");
-                player.sendMessage("§a상금 " + String.format("%,d", (long) winAmount) + "원을 획득하셨습니다!");
-                player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
-            } else {
-                player.sendMessage("§c아쉽습니다. " + result.getDisplayName() + "§c이(가) 나왔습니다.");
-                player.sendMessage("§c다음 기회를 노려보세요!");
-                player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
-            }
-
-        } catch (Exception e) {
-            player.sendMessage("§c결과 처리 중 오류가 발생했습니다.");
-            plugin.getLogger().warning("결과 처리 중 오류 발생: " + e.getMessage());
-            // 베팅 금액 환불
-            plugin.getEconomy().depositPlayer(player, bet.getAmount());
-        } finally {
-            // 베팅 정보 초기화
-            playerBets.remove(playerUUID);
-        }
     }
 }
