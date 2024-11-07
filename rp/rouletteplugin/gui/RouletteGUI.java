@@ -20,7 +20,7 @@ public class RouletteGUI {
 
     // GUI 상수
     private static final String GUI_TITLE = "§6§l룰렛 게임";
-    private static final int GUI_SIZE = 27;
+    public static final int GUI_SIZE = 18;
 
     // 아이템 위치 상수
     private static final int AMOUNT_BUTTON_SLOT = 11;

@@ -112,7 +112,7 @@ public class GameManager {
     }
 
     // determineResult 메서드 수정 (결과를 파라미터로 받도록)
-    private void determineResult(Player player, RouletteColor result) {
+    public void determineResult(Player player, RouletteColor result) {
         UUID playerUUID = player.getUniqueId();
         PlayerBet bet = playerBets.get(playerUUID);
 
