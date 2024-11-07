@@ -15,13 +15,15 @@ import rp.rouletteplugin.animation.RouletteAnimation;
 import java.util.Arrays;
 
 public class RouletteGUI {
+    public static final int MAIN_GUI_SIZE = 27;  // 메인 GUI는 3줄
+    private static final int ANIMATION_GUI_SIZE = 18;  // 애니메이션 GUI는 2줄
     private final Main plugin;
     private final GameManager gameManager;
 
-    // GUI 상수
-    private static final int MAIN_GUI_SIZE = 27;  // 메인 GUI는 3줄로 유지
-    private static final int ANIMATION_GUI_SIZE = 18;  // 애니메이션 GUI만 2줄
-
+    public RouletteGUI(Main plugin, GameManager gameManager) {
+        this.plugin = plugin;
+        this.gameManager = gameManager;
+    }
 
     // 아이템 위치 상수
     private static final int AMOUNT_BUTTON_SLOT = 11;
@@ -30,11 +32,6 @@ public class RouletteGUI {
 
     private static final String AMOUNT_GUI_TITLE = "§e§l베팅 금액 설정";
     private static final int[] BETTING_AMOUNTS = {1000, 5000, 10000, 50000, 100000};
-
-    public RouletteGUI(Main plugin, GameManager gameManager) {
-        this.plugin = plugin;
-        this.gameManager = gameManager;
-    }
 
     private static final long[] BET_AMOUNTS = {
             1000, 5000, 10000,
@@ -60,16 +57,15 @@ public class RouletteGUI {
                 "§7클릭하여 게임을 시작하세요");
 
         // GUI에 아이템 배치
-        inv.setItem(AMOUNT_BUTTON_SLOT, amountButton);
-        inv.setItem(COLOR_BUTTON_SLOT, colorButton);
-        inv.setItem(START_BUTTON_SLOT, startButton);
+        inv.setItem(11, amountButton);
+        inv.setItem(13, colorButton);
+        inv.setItem(15, startButton);
 
-        // GUI 열기
         player.openInventory(inv);
     }
 
     public void openAmountGUI(Player player) {
-        Inventory inv = Bukkit.createInventory(null, GUI_SIZE, AMOUNT_GUI_TITLE);
+        Inventory inv = Bukkit.createInventory(null, MAIN_GUI_SIZE, AMOUNT_GUI_TITLE);
 
         // 베팅 금액 버튼들 생성
         for (int i = 0; i < BET_AMOUNTS.length; i++) {
@@ -103,7 +99,7 @@ public class RouletteGUI {
     private static final String COLOR_GUI_TITLE = "§f§l색상 선택";
 
     public void openColorGUI(Player player) {
-        Inventory inv = Bukkit.createInventory(null, GUI_SIZE, COLOR_GUI_TITLE);
+        Inventory inv = Bukkit.createInventory(null, MAIN_GUI_SIZE, COLOR_GUI_TITLE);
 
         // 빨강 선택
         ItemStack redButton = createGuiItem(

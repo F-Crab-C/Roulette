@@ -14,7 +14,7 @@ import rp.rouletteplugin.Main;
 import rp.rouletteplugin.game.PlayerBet;
 import rp.rouletteplugin.game.RouletteColor;
 
-import static rp.rouletteplugin.gui.RouletteGUI.GUI_SIZE;
+import static rp.rouletteplugin.gui.RouletteGUI.MAIN_GUI_SIZE;
 
 public class RouletteAnimation {
     private final Main plugin;
@@ -33,7 +33,7 @@ public class RouletteAnimation {
     }
 
     public void playRouletteAnimation(Player player, RouletteColor resultColor, Runnable onComplete) {
-        Inventory inv = Bukkit.createInventory(null, GUI_SIZE, "§6§l룰렛 게임");
+        Inventory inv = Bukkit.createInventory(null, MAIN_GUI_SIZE, "§6§l룰렛 게임");
         setupColorPane(inv);
         player.openInventory(inv);
 

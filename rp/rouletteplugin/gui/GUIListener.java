@@ -38,7 +38,7 @@ public class GUIListener implements Listener {
 
         // 메인 메뉴
         if (title.equals("§6§l룰렛 게임")) {
-            handleMainMenu(player, clickedItem);
+            handleMainGUIClick(player, clickedItem);  // 메서드 이름 수정
         }
         // 베팅 금액 설정
         else if (title.equals("§e§l베팅 금액 설정")) {
