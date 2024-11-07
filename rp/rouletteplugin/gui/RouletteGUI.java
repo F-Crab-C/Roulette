@@ -25,6 +25,9 @@ public class RouletteGUI {
     private static final int COLOR_BUTTON_SLOT = 13;
     private static final int START_BUTTON_SLOT = 15;
 
+    private static final String AMOUNT_GUI_TITLE = "§e§l베팅 금액 설정";
+    private static final int[] BETTING_AMOUNTS = {1000, 5000, 10000, 50000, 100000};
+
     public RouletteGUI(Main plugin, GameManager gameManager) {
         this.plugin = plugin;
         this.gameManager = gameManager;
@@ -39,7 +42,7 @@ public class RouletteGUI {
                 "§7클릭하여 베팅 금액을 설정하세요");
 
         // 색상 선택 버튼
-        ItemStack colorButton = createGuiItem(Material.WOOL,
+        ItemStack colorButton = createGuiItem(Material.WHITE_WOOL,
                 "§f색상 선택",
                 "§7클릭하여 베팅할 색상을 선택하세요");
 
@@ -54,6 +57,61 @@ public class RouletteGUI {
         inv.setItem(START_BUTTON_SLOT, startButton);
 
         // GUI 열기
+        player.openInventory(inv);
+    }
+
+    public void openAmountGUI(Player player) {
+        Inventory inv = Bukkit.createInventory(null, 27, AMOUNT_GUI_TITLE);
+
+        // 베팅 금액 버튼들
+        for (int i = 0; i < BETTING_AMOUNTS.length; i++) {
+            ItemStack amountItem = createGuiItem(Material.GOLD_INGOT,
+                    "§e" + BETTING_AMOUNTS[i] + "원",
+                    "§7클릭하여 " + BETTING_AMOUNTS[i] + "원을 베팅");
+            inv.setItem(10 + i, amountItem);
+        }
+
+        // 돌아가기 버튼
+        ItemStack backButton = createGuiItem(Material.BARRIER,
+                "§c돌아가기",
+                "§7메인 메뉴로 돌아갑니다");
+        inv.setItem(26, backButton);
+
+        player.openInventory(inv);
+    }
+
+    private static final String COLOR_GUI_TITLE = "§f§l색상 선택";
+
+    public void openColorGUI(Player player) {
+        Inventory inv = Bukkit.createInventory(null, 27, COLOR_GUI_TITLE);
+
+        // 빨강 선택
+        ItemStack redItem = createGuiItem(Material.RED_WOOL,
+                "§c빨강",
+                "§7승리시 2배",
+                "§7현재 베팅: " + gameManager.getPlayerBet(player.getUniqueId()));
+        inv.setItem(11, redItem);
+
+        // 검정 선택
+        ItemStack blackItem = createGuiItem(Material.BLACK_WOOL,
+                "§0검정",
+                "§7승리시 2배",
+                "§7현재 베팅: " + gameManager.getPlayerBet(player.getUniqueId()));
+        inv.setItem(13, blackItem);
+
+        // 초록 선택
+        ItemStack greenItem = createGuiItem(Material.LIME_WOOL,
+                "§a초록",
+                "§7승리시 14배",
+                "§7현재 베팅: " + gameManager.getPlayerBet(player.getUniqueId()));
+        inv.setItem(15, greenItem);
+
+        // 돌아가기 버튼
+        ItemStack backButton = createGuiItem(Material.BARRIER,
+                "§c돌아가기",
+                "§7메인 메뉴로 돌아갑니다");
+        inv.setItem(26, backButton);
+
         player.openInventory(inv);
     }
 

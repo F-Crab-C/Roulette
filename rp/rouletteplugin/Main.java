@@ -7,7 +7,7 @@ import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
 import rp.rouletteplugin.game.GameManager;
 import rp.rouletteplugin.gui.RouletteGUI;
-import rp.rouletteplugin.listener.GUIListener;
+import rp.rouletteplugin.gui.;
 
 public class Main extends JavaPlugin {
     private static Main instance;
