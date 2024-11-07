@@ -84,7 +84,6 @@ public class GUIListener implements Listener {
         // 게임 시작
         gameManager.startGame(player);
     }
-}
 
     private void handleAmountGUIClick(Player player, ItemStack clickedItem) {
         if (clickedItem.getType() == Material.BARRIER) {
@@ -105,8 +104,9 @@ public class GUIListener implements Listener {
                     return;
                 }
 
-                // 베팅 금액 설정
+                // 여기에 setPlayerBetAmount 호출 추가
                 gameManager.setPlayerBetAmount(player.getUniqueId(), amount);
+
                 player.sendMessage("§a베팅 금액이 " + amount + "원으로 설정되었습니다.");
                 player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
                 plugin.getRouletteGUI().openMainGUI(player);
