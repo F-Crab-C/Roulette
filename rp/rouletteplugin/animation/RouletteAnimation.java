@@ -1,10 +1,7 @@
 package rp.rouletteplugin.animation;
 
-import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import org.bukkit.*;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
@@ -47,13 +44,13 @@ public class RouletteAnimation {
             @Override
             public void run() {
                 if (tick >= 40) {
-                    // GameManager에서 베팅 정보를 가져와야 함
                     PlayerBet bet = plugin.getGameManager().getPlayerBet(player.getUniqueId());
-                    double betAmount = bet != null ? bet.getAmount() : 0;
-                    double winAmount = bet != null && bet.getColor() == resultColor ?
-                            betAmount * (resultColor == RouletteColor.GREEN ? 14 : 2) : 0;
-
-                    showResult(player, resultColor, betAmount, winAmount);
+                    if (bet != null) {
+                        double betAmount = bet.getAmount();
+                        double winAmount = bet.getColor() == resultColor ?
+                                betAmount * (resultColor == RouletteColor.GREEN ? 14 : 2) : 0;
+                        showResult(player, resultColor, betAmount, winAmount);
+                    }
                     onComplete.run();
                     this.cancel();
                     return;

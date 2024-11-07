@@ -4,7 +4,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -51,29 +50,30 @@ public class GUIListener implements Listener {
         }
     }
 
-    public void onInventoryDrag(InventoryDragEvent event) {
-        if(event.getView().getTitle().contains("룰렛")) {
-            event.setCancelled(true);
-        }
-    }
+    private void handleMainGUIClick(Player player, ItemStack clickedItem) {
+        if (clickedItem == null) return;
 
-    private void handleMainMenu(Player player, ItemStack clickedItem) {
-        switch (clickedItem.getType()) {
-            case GOLD_INGOT:
-                plugin.getRouletteGUI().openAmountGUI(player);
-                break;
-            case WHITE_WOOL:
-                if (gameManager.getPlayerBet(player.getUniqueId()) == null ||
-                        gameManager.getPlayerBet(player.getUniqueId()).getAmount() <= 0) {
-                    player.sendMessage("§c먼저 베팅 금액을 설정해주세요!");
-                    player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
-                    return;
-                }
-                plugin.getRouletteGUI().openColorGUI(player);
-                break;
-            case EMERALD:
-                startGame(player);
-                break;
+        try {
+            switch (clickedItem.getType()) {
+                case GOLD_INGOT:
+                    plugin.getRouletteGUI().openAmountGUI(player);
+                    break;
+                case WHITE_WOOL:
+                    if (gameManager.getPlayerBet(player.getUniqueId()) == null ||
+                            gameManager.getPlayerBet(player.getUniqueId()).getAmount() <= 0) {
+                        player.sendMessage("§c먼저 베팅 금액을 설정해주세요!");
+                        player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
+                        return;
+                    }
+                    plugin.getRouletteGUI().openColorGUI(player);
+                    break;
+                case EMERALD:
+                    startGame(player);
+                    break;
+            }
+        } catch (Exception e) {
+            player.sendMessage("§c오류가 발생했습니다.");
+            plugin.getLogger().warning("GUI 클릭 처리 중 오류 발생: " + e.getMessage());
         }
     }
 

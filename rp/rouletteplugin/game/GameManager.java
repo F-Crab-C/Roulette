@@ -151,11 +151,6 @@ public class GameManager {
         }
     }
 
-    public void cleanupPlayerData(UUID playerUUID) {
-        playerBets.remove(playerUUID);
-        playerGameStatus.remove(playerUUID);
-    }
-
     public PlayerBet getPlayerBet(UUID playerUUID) {
         return playerBets.get(playerUUID);
     }

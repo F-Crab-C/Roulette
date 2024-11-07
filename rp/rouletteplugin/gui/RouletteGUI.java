@@ -19,8 +19,9 @@ public class RouletteGUI {
     private final GameManager gameManager;
 
     // GUI 상수
-    private static final String GUI_TITLE = "§6§l룰렛 게임";
-    public static final int GUI_SIZE = 18;
+    private static final int MAIN_GUI_SIZE = 27;  // 메인 GUI는 3줄로 유지
+    private static final int ANIMATION_GUI_SIZE = 18;  // 애니메이션 GUI만 2줄
+
 
     // 아이템 위치 상수
     private static final int AMOUNT_BUTTON_SLOT = 11;
@@ -41,7 +42,7 @@ public class RouletteGUI {
     };
 
     public void openMainGUI(Player player) {
-        Inventory inv = Bukkit.createInventory(null, GUI_SIZE, GUI_TITLE);
+        Inventory inv = Bukkit.createInventory(null, MAIN_GUI_SIZE, "§6§l룰렛 게임");
 
         // 베팅 금액 설정 버튼
         ItemStack amountButton = createGuiItem(Material.GOLD_INGOT,
@@ -146,28 +147,6 @@ public class RouletteGUI {
         player.openInventory(inv);
     }
 
-    public void openRouletteAnimation(Player player, RouletteColor result) {
-        // GUI 초기 설정
-        Inventory inv = Bukkit.createInventory(null, GUI_SIZE, "§6§l룰렛 게임");
-        setGUIBorder(inv);
-        player.openInventory(inv);
-
-        // 애니메이션 시작
-        RouletteAnimation animation = new RouletteAnimation(plugin);
-        animation.playRouletteAnimation(player, result, () -> {
-            // 애니메이션 완료 후 실행될 코드
-            gameManager.determineResult(player, result);
-        });
-    }
-    private void setGUIBorder(Inventory inv) {
-        // GUI 테두리 설정
-        for(int i = 0; i < GUI_SIZE; i++) {
-            if(i < 9 || i >= 36 || i % 9 == 0 || i % 9 == 8) {
-                ItemStack borderItem = createBorderItem(i);
-                inv.setItem(i, borderItem);
-            }
-        }
-    }
     private ItemStack createBorderItem(int position) {
         Material material;
         String name;
@@ -184,19 +163,6 @@ public class RouletteGUI {
         return createGuiItem(material, name);
     }
 
-    private int getAnimationPosition(int pos) {
-        // GUI 테두리를 따라 도는 위치 계산
-        int[] path = {1,2,3,4,5,6,7,16,25,34,43,42,41,40,39,38,37,28,19,10};
-        return path[pos % path.length];
-    }
-
-    private ItemStack createColorItem(Material material, String name) {
-        ItemStack item = new ItemStack(material);
-        ItemMeta meta = item.getItemMeta();
-        meta.setDisplayName(name);
-        item.setItemMeta(meta);
-        return item;
-    }
     private ItemStack createGuiItem(Material material, String name, String... lore) {
         ItemStack item = new ItemStack(material, 1);
         ItemMeta meta = item.getItemMeta();
