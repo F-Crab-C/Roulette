@@ -17,7 +17,7 @@ public class BettingGUI {
     public void openGUI(Player player) {
         Inventory gui = Bukkit.createInventory(null, 27, "베팅 설정");
         gui.setItem(11, createItem(Material.GOLD_INGOT, "베팅 금액 설정"));
-        gui.setItem(15, createItem(Material.WHITE_WOOL, "색상 선택"));
+        gui.setItem(15, createItem(Material.WHITE_WOOL, "색상-선택"));
         gui.setItem(15, createItem(Material.EMERALD, "게임 시작")); // 추가된 부분
         player.openInventory(gui);
     }
