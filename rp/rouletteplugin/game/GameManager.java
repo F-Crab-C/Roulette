@@ -1,8 +1,9 @@
 package rp.rouletteplugin.game;
 
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitRunnable;
+
 import org.bukkit.Sound;
+import rp.rouletteplugin.animation.RouletteAnimation;
 import rp.rouletteplugin.Main;
 
 import java.util.UUID;
@@ -82,32 +83,63 @@ public class GameManager {
             // 베팅 금액 차감
             plugin.getEconomy().withdrawPlayer(player, bet.getAmount());
 
-            // 게임 진행
-            new BukkitRunnable() {
-                private int ticks = 0;
-                private final int ANIMATION_DURATION = 40;
+            // 결과 미리 결정
+            final RouletteColor result;
+            int randomNum = random.nextInt(100);
+            if (randomNum < 20) {
+                result = RouletteColor.GREEN;
+            } else if (randomNum < 60) {
+                result = RouletteColor.RED;
+            } else {
+                result = RouletteColor.BLACK;
+            }
 
+            // 애니메이션 실행
+            RouletteAnimation animation = new RouletteAnimation(plugin);
+            animation.playRouletteAnimation(player, result, new Runnable() {
                 @Override
                 public void run() {
-                    if (ticks >= ANIMATION_DURATION) {
-                        determineResult(player);
-                        playerGameStatus.remove(playerUUID);
-                        this.cancel();
-                        return;
-                    }
-
-                    if (ticks % 2 == 0) {
-                        player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1, 1);
-                    }
-
-                    ticks++;
+                    determineResult(player, result);
+                    playerGameStatus.remove(playerUUID);
                 }
-            }.runTaskTimer(plugin, 0L, 1L);
+            });
 
         } catch (Exception e) {
             player.sendMessage("§c게임 진행 중 오류가 발생했습니다.");
             plugin.getLogger().warning("게임 진행 중 오류 발생: " + e.getMessage());
             playerGameStatus.remove(playerUUID);
+        }
+    }
+
+    // determineResult 메서드 수정 (결과를 파라미터로 받도록)
+    private void determineResult(Player player, RouletteColor result) {
+        UUID playerUUID = player.getUniqueId();
+        PlayerBet bet = playerBets.get(playerUUID);
+
+        try {
+            // 결과 처리 및 상금 지급
+            if (bet.getColor() == result) {
+                double multiplier = (result == RouletteColor.GREEN) ? GREEN_MULTIPLIER : NORMAL_MULTIPLIER;
+                double winAmount = bet.getAmount() * multiplier;
+
+                plugin.getEconomy().depositPlayer(player, winAmount);
+                player.sendMessage("§a축하합니다! " + result.getDisplayName() + "§a이(가) 나왔습니다!");
+                player.sendMessage("§a상금 " + String.format("%,d", (long)winAmount) + "원을 획득하셨습니다!");
+                player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
+            } else {
+                player.sendMessage("§c아쉽습니다. " + result.getDisplayName() + "§c이(가) 나왔습니다.");
+                player.sendMessage("§c다음 기회를 노려보세요!");
+                player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
+            }
+
+        } catch (Exception e) {
+            player.sendMessage("§c결과 처리 중 오류가 발생했습니다.");
+            plugin.getLogger().warning("결과 처리 중 오류 발생: " + e.getMessage());
+            // 베팅 금액 환불
+            plugin.getEconomy().depositPlayer(player, bet.getAmount());
+        } finally {
+            // 베팅 정보 초기화
+            playerBets.remove(playerUUID);
         }
     }
 
