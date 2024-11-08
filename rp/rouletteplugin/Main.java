@@ -1,17 +1,24 @@
 package rp.rouletteplugin;
 
 import net.milkbowl.vault.economy.Economy;
+import org.bukkit.Location;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
-import rp.rouletteplugin.command.RouletteCommand;
 import rp.rouletteplugin.game.GameManager;
 import rp.rouletteplugin.gui.RouletteGUI;
 import rp.rouletteplugin.gui.GUIListener;
+import rp.rouletteplugin.hologramsystem.RouletteAnimation;
+import rp.rouletteplugin.hologramsystem.RouletteBall;
+import rp.rouletteplugin.hologramsystem.RouletteWheel;
 
 public class Main extends JavaPlugin {
     private Economy economy;
     private GameManager gameManager;
     private RouletteGUI rouletteGUI;
+
+    private RouletteWheel rouletteWheel;
+    private RouletteBall rouletteBall;
+    private RouletteAnimation rouletteAnimation;
 
     @Override
     public void onEnable() {
@@ -38,6 +45,12 @@ public class Main extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new GUIListener(this, gameManager), this);
 
         getLogger().info("룰렛 플러그인이 활성화되었습니다!");
+
+        Location rouletteLocation = // 룰렛이 생성될 위치 설정
+                this.rouletteWheel = new RouletteWheel(rouletteLocation);
+
+        this.rouletteBall = new RouletteBall(rouletteLocation.clone().add(0, 0.5, 0));
+        this.rouletteAnimation = new RouletteAnimation(this, rouletteWheel, rouletteBall);
     }
 
     @Override

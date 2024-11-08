@@ -1,5 +1,6 @@
 package rp.rouletteplugin.hologramsystem;
 
+
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
@@ -10,12 +11,14 @@ public class RouletteBall {
     private Vector velocity;
     private boolean isMoving;
     private int entityId;
+    private static final double BALL_HEIGHT = 0.5; // 공의 기본 높이
+    private static final double BALL_ORBIT_RADIUS = 1.8; // 공의 회전 반경
+
     private final double GRAVITY = 0.05;
     private final double FRICTION = 0.98;
 
     public RouletteBall(Location startLocation) {
-        this.hologramManager = new HologramManager();
-        this.currentLocation = startLocation.clone();
+        this.currentLocation = startLocation.clone().add(0, BALL_HEIGHT, 0);
         this.velocity = new Vector(0, 0, 0);
         this.isMoving = false;
     }
@@ -77,19 +80,17 @@ public class RouletteBall {
     }
 
     // 공의 회전 운동을 위한 메서드
-    public void spin(Location center, double radius, double angle, double speed) {
+    public void spin(Location center, double angle, double speed) {
         if (!isMoving) return;
 
-        // 원운동 계산
-        double x = center.getX() + radius * Math.cos(angle);
-        double z = center.getZ() + radius * Math.sin(angle);
+        // 개선된 원운동 계산
+        double x = center.getX() + BALL_ORBIT_RADIUS * Math.cos(angle);
+        double y = center.getY() + BALL_HEIGHT + (Math.sin(angle * 2) * 0.05); // 약간의 상하 움직임
+        double z = center.getZ() + BALL_ORBIT_RADIUS * Math.sin(angle);
 
         currentLocation.setX(x);
+        currentLocation.setY(y);
         currentLocation.setZ(z);
-
-        // Y축 높이는 유지하되, 약간의 흔들림 효과 추가
-        double wobble = Math.sin(angle * 2) * 0.05;
-        currentLocation.setY(center.getY() + wobble);
     }
 
     // 공이 특정 위치에 가까운지 확인하는 메서드

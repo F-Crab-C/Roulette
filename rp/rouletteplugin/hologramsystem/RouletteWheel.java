@@ -2,6 +2,8 @@ package rp.rouletteplugin.hologramsystem;
 
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
+import org.bukkit.util.Vector;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -13,6 +15,14 @@ public class RouletteWheel {
     private final List<Integer> numbers;
     private final Map<Integer, String> numberColors;
     private boolean isSpinning;
+
+    private static final double WHEEL_RADIUS = 2.0; // 룰렛 휠의 기본 반지름
+    private static final double NUMBER_HEIGHT = 0.25; // 숫자들의 높이 간격
+
+    private static final String GREEN_COLOR = "§2";  // 초록색
+    private static final String RED_COLOR = "§c";    // 빨간색
+    private static final String BLACK_COLOR = "§8";  // 검은색
+    private static final String NUMBER_FORMAT = "【%d】"; // 숫자 포맷
 
     // 룰렛 번호 배열 (실제 룰렛 순서대로)
     private static final int[] ROULETTE_NUMBERS = {
@@ -33,13 +43,33 @@ public class RouletteWheel {
     private void initializeNumbers() {
         for (int number : ROULETTE_NUMBERS) {
             numbers.add(number);
-            // 숫자별 색상 설정
+            // 개선된 색상과 심볼 포맷팅
             if (number == 0) {
-                numberColors.put(number, "§2"); // 초록색
+                numberColors.put(number, GREEN_COLOR + String.format(NUMBER_FORMAT, number));
             } else if (isRedNumber(number)) {
-                numberColors.put(number, "§c"); // 빨간색
+                numberColors.put(number, RED_COLOR + String.format(NUMBER_FORMAT, number));
             } else {
-                numberColors.put(number, "§8"); // 검은색
+                numberColors.put(number, BLACK_COLOR + String.format(NUMBER_FORMAT, number));
+            }
+        }
+    }
+
+    public class RouletteBall {
+        // 공 심볼 상수
+        private static final String BALL_SYMBOL = "§f●"; // 흰색 공
+        private static final String MOVING_BALL_SYMBOL = "§7◎"; // 회전 중인 공
+
+        public void spawn(Player player) {
+            hologramManager.createHologram(player, currentLocation, BALL_SYMBOL);
+        }
+
+        public void updatePosition(Player player) {
+            if (isMoving) {
+                hologramManager.removeHologram(player);
+                hologramManager.createHologram(player, currentLocation, MOVING_BALL_SYMBOL);
+            } else {
+                hologramManager.removeHologram(player);
+                hologramManager.createHologram(player, currentLocation, BALL_SYMBOL);
             }
         }
     }
@@ -54,20 +84,23 @@ public class RouletteWheel {
     }
 
     public void createWheel(Player player) {
-        double radius = 2.0; // 룰렛의 반지름
+        // 숫자들의 위치를 더 자연스럽게 배치
         double angleIncrement = 2 * Math.PI / numbers.size();
 
         for (int i = 0; i < numbers.size(); i++) {
             double angle = i * angleIncrement;
-            double x = centerLocation.getX() + radius * Math.cos(angle);
-            double z = centerLocation.getZ() + radius * Math.sin(angle);
+
+            // 위치 계산 개선
+            double x = centerLocation.getX() + WHEEL_RADIUS * Math.cos(angle);
+            double y = centerLocation.getY() + NUMBER_HEIGHT; // 높이 조정
+            double z = centerLocation.getZ() + WHEEL_RADIUS * Math.sin(angle);
 
             Location numLocation = new Location(
                     centerLocation.getWorld(),
                     x,
-                    centerLocation.getY(),
+                    y,
                     z
-            );
+            ).setDirection(new Vector(x - centerLocation.getX(), 0, z - centerLocation.getZ()));
 
             int number = numbers.get(i);
             String colorCode = numberColors.get(number);
@@ -93,5 +126,15 @@ public class RouletteWheel {
 
     public String getNumberColor(int number) {
         return numberColors.getOrDefault(number, "§f");
+    }
+    public class RouletteAnimation {
+        // 승리/패배 시 효과 심볼
+        private static final String WIN_SYMBOL = "§6✦";  // 승리 효과
+        private static final String LOSE_SYMBOL = "§7✧"; // 패배 효과
+
+        public void showResult(Player player, boolean isWin) {
+            String resultSymbol = isWin ? WIN_SYMBOL : LOSE_SYMBOL;
+            // 결과 표시 로직...
+        }
     }
 }
