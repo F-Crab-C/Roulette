@@ -1,25 +1,21 @@
-package rp.rouletteplugin.gui;
+package rp.rouletteplugin.listener;
 
-import org.bukkit.ChatColor;
-import org.bukkit.Material;
-import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.inventory.InventoryDragEvent;
-import org.bukkit.inventory.ItemStack;
-import rp.rouletteplugin.Main;
-import rp.rouletteplugin.game.GameManager;
-import rp.rouletteplugin.game.RouletteColor;
+import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.inventory.Inventory;
+import rp.rouletteplugin.manager.BettingManager;
+import rp.rouletteplugin.manager.GameManager;
 
 public class GUIListener implements Listener {
-    private final Main plugin;
     private final GameManager gameManager;
+    private final BettingManager bettingManager;
 
-    public GUIListener(Main plugin, GameManager gameManager) {
-        this.plugin = plugin;
+    public GUIListener(GameManager gameManager) {
         this.gameManager = gameManager;
+        this.bettingManager = BettingManager.getInstance();
     }
 
     @EventHandler
@@ -27,128 +23,41 @@ public class GUIListener implements Listener {
         if (!(event.getWhoClicked() instanceof Player)) return;
 
         Player player = (Player) event.getWhoClicked();
-        ItemStack clickedItem = event.getCurrentItem();
-        String title = event.getView().getTitle();
+        Inventory inventory = event.getInventory();
 
-        if (clickedItem == null) return;
+        // 베팅 GUI 클릭 처리
+        if (inventory.getHolder() instanceof BettingGUI) {
+            event.setCancelled(true);
 
-        // 디버그 메시지
-        plugin.getLogger().info("Inventory clicked: " + title);
-        plugin.getLogger().info("Clicked item: " + clickedItem.getType());
+            if (event.getCurrentItem() == null) return;
 
-        event.setCancelled(true);
+            // 시작 버튼 클릭
+            if (event.getSlot() == 49) { // 시작 버튼 슬롯
+                if (bettingManager.hasBetting(player)) {
+                    gameManager.startRouletteAnimation(player);
+                } else {
+                    player.sendMessage("§c베팅을 먼저 해주세요!");
+                }
+                return;
+            }
 
-        switch(title) {
-            case "§6§l룰렛 게임":
-                plugin.getLogger().info("Main GUI clicked");
-                handleMainGUIClick(player, clickedItem);
-                break;
-            case "§e§l베팅 금액 설정":
-                plugin.getLogger().info("Amount GUI clicked");
-                handleAmountGUIClick(player, clickedItem);
-                break;
-            case "§f§l색상 선택":
-                plugin.getLogger().info("Color GUI clicked");
-                handleColorGUIClick(player, clickedItem);
-                break;
+            // 베팅 처리
+            bettingManager.handleBetting(player, event.getSlot(), event.isRightClick());
         }
     }
 
     @EventHandler
-    public void onInventoryDrag(InventoryDragEvent event) {
-        if (event.getView().getTitle().contains("룰렛")) {
-            event.setCancelled(true);
-        }
-    }
+    public void onInventoryClose(InventoryCloseEvent event) {
+        if (!(event.getPlayer() instanceof Player)) return;
 
-    private void handleMainGUIClick(Player player, ItemStack clickedItem) {
-        plugin.getLogger().info("Handling main GUI click: " + clickedItem.getType());
+        Player player = (Player) event.getPlayer();
+        Inventory inventory = event.getInventory();
 
-        switch (clickedItem.getType()) {
-            case GOLD_INGOT:
-                plugin.getLogger().info("Opening amount GUI");
-                plugin.getRouletteGUI().openAmountGUI(player);
-                break;
-            case WHITE_WOOL:
-                plugin.getLogger().info("Checking bet amount before color selection");
-                if (!gameManager.isPlayerBetComplete(player.getUniqueId())) {
-                    player.sendMessage("§c먼저 베팅 금액을 설정해주세요!");
-                    player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
-                    return;
-                }
-                plugin.getRouletteGUI().openColorGUI(player);
-                break;
-            case EMERALD:
-                if (!gameManager.isPlayerBetComplete(player.getUniqueId())) {
-                    player.sendMessage("§c베팅 금액과 색상을 모두 설정해주세요!");
-                    player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
-                    return;
-                }
-                gameManager.startGame(player);
-                break;
-        }
-    }
-
-    private void handleAmountGUIClick(Player player, ItemStack clickedItem) {
-        if (clickedItem.getType() == Material.BARRIER) {
-            plugin.getRouletteGUI().openMainGUI(player);
-            return;
-        }
-
-        if (clickedItem.getType() == Material.GOLD_INGOT) {
-            String amountStr = ChatColor.stripColor(clickedItem.getItemMeta().getDisplayName())
-                    .replace("원", "").replace(",", "");
-            try {
-                double amount = Double.parseDouble(amountStr);
-
-                if (plugin.getEconomy().getBalance(player) < amount) {
-                    player.sendMessage("§c보유 금액이 부족합니다!");
-                    player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
-                    return;
-                }
-
-                gameManager.setPlayerBetAmount(player.getUniqueId(), amount);
-                player.sendMessage("§a베팅 금액이 " + String.format("%,d", (long)amount) + "원으로 설정되었습니다.");
-                player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
-                plugin.getRouletteGUI().openMainGUI(player);
-            } catch (NumberFormatException e) {
-                player.sendMessage("§c오류가 발생했습니다.");
-                plugin.getLogger().warning("금액 변환 중 오류 발생: " + e.getMessage());
+        // 베팅 GUI가 강제로 닫힌 경우 처리
+        if (inventory.getHolder() instanceof BettingGUI) {
+            if (gameManager.isGameRunning() && !bettingManager.hasBetting(player)) {
+                gameManager.stopGame(player);
             }
-        }
-    }
-
-    private void handleColorGUIClick(Player player, ItemStack clickedItem) {
-        plugin.getLogger().info("Color GUI Click - Item: " + clickedItem.getType());
-
-        if (clickedItem.getType() == Material.BARRIER) {
-            plugin.getRouletteGUI().openMainGUI(player);
-            return;
-        }
-
-        RouletteColor selectedColor = null;
-        switch (clickedItem.getType()) {
-            case RED_WOOL:
-                selectedColor = RouletteColor.RED;
-                plugin.getLogger().info("Selected RED");
-                break;
-            case BLACK_WOOL:
-                selectedColor = RouletteColor.BLACK;
-                plugin.getLogger().info("Selected BLACK");
-                break;
-            case LIME_WOOL:
-                selectedColor = RouletteColor.GREEN;
-                plugin.getLogger().info("Selected GREEN");
-                break;
-        }
-
-        if (selectedColor != null) {
-            gameManager.setPlayerBetColor(player.getUniqueId(), selectedColor);
-            plugin.getLogger().info("Player " + player.getName() + " bet color set to: " + selectedColor);
-
-            player.sendMessage("§a" + selectedColor.getDisplayName() + " §f색상을 선택했습니다.");
-            player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
-            plugin.getRouletteGUI().openMainGUI(player);
         }
     }
 }
