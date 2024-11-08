@@ -1,39 +1,30 @@
 package rp.rouletteplugin.animation;
 
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.ProtocolManager;
-import org.bukkit.*;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scheduler.BukkitRunnable;
-
 import rp.rouletteplugin.Main;
-import rp.rouletteplugin.game.PlayerBet;
 import rp.rouletteplugin.game.RouletteColor;
-
-import static rp.rouletteplugin.gui.RouletteGUI.MAIN_GUI_SIZE;
+import rp.rouletteplugin.game.PlayerBet;
 
 public class RouletteAnimation {
     private final Main plugin;
-    private final ProtocolManager protocolManager;
-    private ArmorStand hologram;
-
-    private static final String[] ROULETTE_FRAMES = {
-            "§c○ §0● §a■",
-            "§a■ §c○ §0●",
-            "§0● §a■ §c○"
-    };
+    private static final int GUI_SIZE = 18;
+    private static final String GUI_TITLE = "§6§l룰렛 게임";
 
     public RouletteAnimation(Main plugin) {
         this.plugin = plugin;
-        this.protocolManager = ProtocolLibrary.getProtocolManager();
     }
 
     public void playRouletteAnimation(Player player, RouletteColor resultColor, Runnable onComplete) {
-        Inventory inv = Bukkit.createInventory(null, MAIN_GUI_SIZE, "§6§l룰렛 게임");
+        Inventory inv = Bukkit.createInventory(null, GUI_SIZE, GUI_TITLE);
         setupColorPane(inv);
         player.openInventory(inv);
 
@@ -56,58 +47,59 @@ public class RouletteAnimation {
                     return;
                 }
 
-                // 이전 위치의 공 제거 (첫 번째 줄에서만)
+                // 이전 위치의 공 제거
                 if (position > 0) {
-                    inv.setItem(position - 1, null);
+                    inv.setItem(position - 1 % 9, null);
                 }
 
-                // 새 위치에 공 배치 (첫 번째 줄에서만)
-                ItemStack ball = new ItemStack(Material.FIREWORK_STAR);
-                ItemMeta meta = ball.getItemMeta();
-                meta.setDisplayName("§f●");
-                ball.setItemMeta(meta);
+                // 새 위치에 공 배치 (첫 번째 줄에만)
+                ItemStack ball = createBall();
                 inv.setItem(position % 9, ball);
+
+                // 효과음
+                if (tick % 2 == 0) {
+                    player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1, 1);
+                }
 
                 position++;
                 tick++;
-
-                // 효과음 (속도에 따라 음높이 변경)
-                float pitch = 1.0f + (tick / 40.0f);
-                player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1, pitch);
             }
         }.runTaskTimer(plugin, 0L, 2L);
     }
 
     private void setupColorPane(Inventory inv) {
-        // 두 번째 줄에 색상 유리판 배치 (9-17번 슬롯)
+        // 두 번째 줄에 색상 패널 배치 (9-17번 슬롯)
         for (int i = 9; i < 18; i++) {
             ItemStack pane;
             if (i == 13) { // 중앙에 초록
-                pane = createGuiItem(Material.LIME_STAINED_GLASS_PANE, "§a초록");
+                pane = createColorPane(Material.LIME_STAINED_GLASS_PANE, "§a초록");
             } else if (i % 2 == 0) { // 짝수 위치에 빨강
-                pane = createGuiItem(Material.RED_STAINED_GLASS_PANE, "§c빨강");
+                pane = createColorPane(Material.RED_STAINED_GLASS_PANE, "§c빨강");
             } else { // 홀수 위치에 검정
-                pane = createGuiItem(Material.BLACK_STAINED_GLASS_PANE, "§0검정");
+                pane = createColorPane(Material.BLACK_STAINED_GLASS_PANE, "§0검정");
             }
             inv.setItem(i, pane);
         }
     }
 
-    private ItemStack createGuiItem(Material material, String name) {
-        ItemStack item = new ItemStack(material);
-        ItemMeta meta = item.getItemMeta();
+    private ItemStack createBall() {
+        ItemStack ball = new ItemStack(Material.FIREWORK_STAR);
+        ItemMeta meta = ball.getItemMeta();
+        meta.setDisplayName("§f●");
+        ball.setItemMeta(meta);
+        return ball;
+    }
+
+    private ItemStack createColorPane(Material material, String name) {
+        ItemStack pane = new ItemStack(material);
+        ItemMeta meta = pane.getItemMeta();
         meta.setDisplayName(name);
-        item.setItemMeta(meta);
-        return item;
+        pane.setItemMeta(meta);
+        return pane;
     }
 
-    private int getAnimationPosition(int pos) {
-        int[] path = {1, 2, 3, 4, 5, 6, 7, 16, 25, 34, 43, 42, 41, 40, 39, 38, 37, 28, 19, 10};
-        return path[pos % path.length];
-    }
-
-    public void showResult(Player player, RouletteColor resultColor, double betAmount, double winAmount) {
-        Location loc = player.getLocation().add(0, 1.5, 0);  // 높이 낮춤
+    private void showResult(Player player, RouletteColor resultColor, double betAmount, double winAmount) {
+        Location loc = player.getLocation().add(0, 1.5, 0);
         ArmorStand hologram1 = loc.getWorld().spawn(loc, ArmorStand.class);
         ArmorStand hologram2 = loc.getWorld().spawn(loc.add(0, 0.3, 0), ArmorStand.class);
 
@@ -121,11 +113,11 @@ public class RouletteAnimation {
         if (winAmount > 0) {
             // 승리
             hologram1.setCustomName("§a우승!");
-            hologram2.setCustomName("§e+" + String.format("%,d", (long) winAmount) + "원");
+            hologram2.setCustomName("§e+" + String.format("%,d", (long)winAmount) + "원");
         } else {
             // 패배
             hologram1.setCustomName("§c패배");
-            hologram2.setCustomName("§c-" + String.format("%,d", (long) betAmount) + "원");
+            hologram2.setCustomName("§c-" + String.format("%,d", (long)betAmount) + "원");
         }
 
         // 3초 후 홀로그램 제거

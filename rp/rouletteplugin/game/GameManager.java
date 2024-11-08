@@ -1,19 +1,21 @@
 package rp.rouletteplugin.game;
 
-import org.bukkit.entity.Player;
-
 import org.bukkit.Sound;
-import rp.rouletteplugin.animation.RouletteAnimation;
+import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitRunnable;
 import rp.rouletteplugin.Main;
+import rp.rouletteplugin.animation.RouletteAnimation;
 
-import java.util.UUID;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class GameManager {
     private final Main plugin;
-    private final ConcurrentHashMap<UUID, PlayerBet> playerBets;
-    private final ConcurrentHashMap<UUID, Boolean> playerGameStatus;
+    private final Map<UUID, PlayerBet> playerBets;
+    private final Map<UUID, Boolean> playerGameStatus;
     private final Random random;
 
     // 배당률 상수
@@ -32,19 +34,28 @@ public class GameManager {
             PlayerBet bet = playerBets.computeIfAbsent(playerUUID,
                     k -> new PlayerBet(playerUUID, 0, null));
             bet.setAmount(amount);
+            plugin.getLogger().info("Bet amount set for " + playerUUID + ": " + amount);
         } catch (Exception e) {
             plugin.getLogger().warning("베팅 금액 설정 중 오류 발생: " + e.getMessage());
         }
     }
 
     public void setPlayerBetColor(UUID playerUUID, RouletteColor color) {
-        PlayerBet bet = playerBets.computeIfAbsent(playerUUID, k -> new PlayerBet(playerUUID, 0, null));
-        bet.setColor(color);
+        try {
+            PlayerBet bet = playerBets.computeIfAbsent(playerUUID,
+                    k -> new PlayerBet(playerUUID, 0, null));
+            bet.setColor(color);
+            plugin.getLogger().info("Bet color set for " + playerUUID + ": " + color);
+        } catch (Exception e) {
+            plugin.getLogger().warning("베팅 색상 설정 중 오류 발생: " + e.getMessage());
+        }
     }
 
     public boolean isPlayerBetComplete(UUID playerUUID) {
         PlayerBet bet = playerBets.get(playerUUID);
-        return bet != null && bet.getAmount() > 0 && bet.getColor() != null;
+        boolean complete = bet != null && bet.getAmount() > 0 && bet.getColor() != null;
+        plugin.getLogger().info("Checking bet completion for " + playerUUID + ": " + complete);
+        return complete;
     }
 
     public boolean isPlayerInGame(UUID playerUUID) {
@@ -91,12 +102,9 @@ public class GameManager {
 
             // 애니메이션 실행
             RouletteAnimation animation = new RouletteAnimation(plugin);
-            animation.playRouletteAnimation(player, result, new Runnable() {
-                @Override
-                public void run() {
-                    determineResult(player, result);
-                    playerGameStatus.remove(playerUUID);
-                }
+            animation.playRouletteAnimation(player, result, () -> {
+                determineResult(player, result);
+                playerGameStatus.remove(playerUUID);
             });
 
         } catch (Exception e) {
@@ -106,33 +114,24 @@ public class GameManager {
         }
     }
 
-    public void determineResult(Player player, RouletteColor result) {
+    private void determineResult(Player player, RouletteColor result) {
         UUID playerUUID = player.getUniqueId();
         PlayerBet bet = playerBets.get(playerUUID);
-        RouletteAnimation animation = new RouletteAnimation(plugin);
 
         try {
             // 결과 처리 및 상금 지급
             if (bet.getColor() == result) {
-                // 승리한 경우
                 double multiplier = (result == RouletteColor.GREEN) ? GREEN_MULTIPLIER : NORMAL_MULTIPLIER;
                 double winAmount = bet.getAmount() * multiplier;
 
                 plugin.getEconomy().depositPlayer(player, winAmount);
                 player.sendMessage("§a축하합니다! " + result.getDisplayName() + "§a이(가) 나왔습니다!");
-                player.sendMessage("§a상금 " + String.format("%,d", (long) winAmount) + "원을 획득하셨습니다!");
+                player.sendMessage("§a상금 " + String.format("%,d", (long)winAmount) + "원을 획득하셨습니다!");
                 player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
-
-                // 승리 홀로그램 표시
-                animation.showResult(player, result, bet.getAmount(), winAmount);
             } else {
-                // 패배한 경우
                 player.sendMessage("§c아쉽습니다. " + result.getDisplayName() + "§c이(가) 나왔습니다.");
                 player.sendMessage("§c다음 기회를 노려보세요!");
                 player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
-
-                // 패배 홀로그램 표시 (winAmount를 0으로 설정하여 패배 표시)
-                animation.showResult(player, result, bet.getAmount(), 0);
             }
 
         } catch (Exception e) {
@@ -144,6 +143,11 @@ public class GameManager {
             // 베팅 정보 초기화
             playerBets.remove(playerUUID);
         }
+    }
+
+    public void cleanupPlayerData(UUID playerUUID) {
+        playerBets.remove(playerUUID);
+        playerGameStatus.remove(playerUUID);
     }
 
     public PlayerBet getPlayerBet(UUID playerUUID) {

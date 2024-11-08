@@ -1,4 +1,3 @@
-// PlayerBet.java
 package rp.rouletteplugin.game;
 
 import java.util.UUID;
@@ -14,7 +13,7 @@ public class PlayerBet {
         this.color = color;
     }
 
-    // Getters and Setters
+    // Getter 메서드들
     public UUID getPlayerUUID() {
         return playerUUID;
     }
@@ -23,12 +22,13 @@ public class PlayerBet {
         return amount;
     }
 
-    public void setAmount(double amount) {
-        this.amount = amount;
-    }
-
     public RouletteColor getColor() {
         return color;
+    }
+
+    // Setter 메서드들
+    public void setAmount(double amount) {
+        this.amount = amount;
     }
 
     public void setColor(RouletteColor color) {

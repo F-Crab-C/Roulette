@@ -1,13 +1,14 @@
 package rp.rouletteplugin.gui;
 
+import org.bukkit.ChatColor;
+import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.Material;
-import org.bukkit.Sound;
-import org.bukkit.ChatColor;
 import rp.rouletteplugin.Main;
 import rp.rouletteplugin.game.GameManager;
 import rp.rouletteplugin.game.RouletteColor;
@@ -23,23 +24,19 @@ public class GUIListener implements Listener {
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
-        // 기본 디버그 메시지 추가
-        plugin.getLogger().info("Inventory clicked: " + event.getView().getTitle());
-
         if (!(event.getWhoClicked() instanceof Player)) return;
 
         Player player = (Player) event.getWhoClicked();
         ItemStack clickedItem = event.getCurrentItem();
+        String title = event.getView().getTitle();
 
         if (clickedItem == null) return;
 
-        // 클릭된 아이템 정보 로깅
+        // 디버그 메시지
+        plugin.getLogger().info("Inventory clicked: " + title);
         plugin.getLogger().info("Clicked item: " + clickedItem.getType());
 
         event.setCancelled(true);
-
-        String title = event.getView().getTitle();
-        plugin.getLogger().info("GUI Title: " + title);
 
         switch(title) {
             case "§6§l룰렛 게임":
@@ -57,12 +54,23 @@ public class GUIListener implements Listener {
         }
     }
 
+    @EventHandler
+    public void onInventoryDrag(InventoryDragEvent event) {
+        if (event.getView().getTitle().contains("룰렛")) {
+            event.setCancelled(true);
+        }
+    }
+
     private void handleMainGUIClick(Player player, ItemStack clickedItem) {
+        plugin.getLogger().info("Handling main GUI click: " + clickedItem.getType());
+
         switch (clickedItem.getType()) {
             case GOLD_INGOT:
+                plugin.getLogger().info("Opening amount GUI");
                 plugin.getRouletteGUI().openAmountGUI(player);
                 break;
             case WHITE_WOOL:
+                plugin.getLogger().info("Checking bet amount before color selection");
                 if (!gameManager.isPlayerBetComplete(player.getUniqueId())) {
                     player.sendMessage("§c먼저 베팅 금액을 설정해주세요!");
                     player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
@@ -100,19 +108,17 @@ public class GUIListener implements Listener {
                 }
 
                 gameManager.setPlayerBetAmount(player.getUniqueId(), amount);
-                player.sendMessage("§a베팅 금액이 " + String.format("%,d", (long) amount) + "원으로 설정되었습니다.");
+                player.sendMessage("§a베팅 금액이 " + String.format("%,d", (long)amount) + "원으로 설정되었습니다.");
                 player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
                 plugin.getRouletteGUI().openMainGUI(player);
             } catch (NumberFormatException e) {
                 player.sendMessage("§c오류가 발생했습니다.");
+                plugin.getLogger().warning("금액 변환 중 오류 발생: " + e.getMessage());
             }
         }
     }
 
     private void handleColorGUIClick(Player player, ItemStack clickedItem) {
-        if (clickedItem == null) return;
-
-        // 디버그 메시지 추가
         plugin.getLogger().info("Color GUI Click - Item: " + clickedItem.getType());
 
         if (clickedItem.getType() == Material.BARRIER) {
@@ -138,7 +144,6 @@ public class GUIListener implements Listener {
 
         if (selectedColor != null) {
             gameManager.setPlayerBetColor(player.getUniqueId(), selectedColor);
-            // 디버그 메시지 추가
             plugin.getLogger().info("Player " + player.getName() + " bet color set to: " + selectedColor);
 
             player.sendMessage("§a" + selectedColor.getDisplayName() + " §f색상을 선택했습니다.");
