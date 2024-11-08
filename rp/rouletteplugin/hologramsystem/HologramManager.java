@@ -10,10 +10,10 @@ import org.bukkit.Location;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.List;
 
 public class HologramManager {
     private final ProtocolManager protocolManager;
@@ -26,38 +26,14 @@ public class HologramManager {
     }
 
     public void createHologram(Player player, Location location, String text) {
-        PacketContainer packet = protocolManager.createPacket(PacketType.Play.Server.SPAWN_ENTITY);
-
-        int entityId = ENTITY_ID++;
-        entityIds.put(player.getUniqueId(), entityId);
-
-        packet.getIntegers()
-                .write(0, entityId)
-                .write(1, EntityType.ARMOR_STAND.getTypeId());
-
-        packet.getDoubles()
-                .write(0, location.getX())
-                .write(1, location.getY())
-                .write(2, location.getZ());
-
-        PacketContainer metadata = protocolManager.createPacket(PacketType.Play.Server.ENTITY_METADATA);
-        metadata.getIntegers().write(0, entityId);
-
-        WrappedDataWatcher watcher = new WrappedDataWatcher();
-        watcher.setObject(0, (byte) 0x20);
-        watcher.setObject(2, text);
-        watcher.setObject(3, (byte) 1);
-
-        metadata.getWatchableCollectionModifier().write(0, watcher.getWatchableObjects());
-
         try {
-            protocolManager.sendServerPacket(player, packet);
-            protocolManager.sendServerPacket(player, metadata);
-        } catch (InvocationTargetException e) {
-            // 단순 printStackTrace() 대신 더 구체적인 에러 처리
-            Bukkit.getLogger().warning("홀로그램 생성 중 오류 발생: " + e.getCause().getMessage());
-            // 또는 플러그인 로거 사용
-            plugin.getLogger().warning("홀로그램 생성 실패: " + player.getName());
+            int entityId = ENTITY_ID++;
+            entityIds.put(player.getUniqueId(), entityId);
+
+            protocolManager.sendServerPacket(player, createSpawnPacket(entityId, location));
+            protocolManager.sendServerPacket(player, createMetadataPacket(entityId, text));
+        } catch (Exception e) {
+            Bukkit.getLogger().warning("홀로그램 생성 실패: " + e.getMessage());
         }
     }
 
@@ -65,19 +41,68 @@ public class HologramManager {
         UUID playerId = player.getUniqueId();
         if (!entityIds.containsKey(playerId)) return;
 
-        PacketContainer packet = protocolManager.createPacket(PacketType.Play.Server.ENTITY_DESTROY);
-        packet.getIntegerArrays().write(0, new int[]{entityIds.get(playerId)});
+        try {
+            PacketContainer packet = protocolManager.createPacket(PacketType.Play.Server.ENTITY_DESTROY);
+            packet.getIntLists().write(0, List.of(entityIds.get(playerId)));
+
+            protocolManager.sendServerPacket(player, packet);
+            entityIds.remove(playerId);
+        } catch (Exception e) {
+            Bukkit.getLogger().warning("홀로그램 제거 실패: " + e.getMessage());
+        }
+    }
+
+    public void updateHologramLocation(Player player, Location newLocation) {
+        UUID playerId = player.getUniqueId();
+        if (!entityIds.containsKey(playerId)) return;
 
         try {
-            protocolManager.sendServerPacket(player, packet);
-            protocolManager.sendServerPacket(player, metadata);
-        } catch (InvocationTargetException e) {
-            // 단순 printStackTrace() 대신 더 구체적인 에러 처리
-            Bukkit.getLogger().warning("홀로그램 생성 중 오류 발생: " + e.getCause().getMessage());
-            // 또는 플러그인 로거 사용
-            plugin.getLogger().warning("홀로그램 생성 실패: " + player.getName());
-        }
+            PacketContainer packet = protocolManager.createPacket(PacketType.Play.Server.ENTITY_TELEPORT);
+            packet.getIntegers().write(0, entityIds.get(playerId));
+            packet.getDoubles()
+                    .write(0, newLocation.getX())
+                    .write(1, newLocation.getY())
+                    .write(2, newLocation.getZ());
 
-        entityIds.remove(playerId);
+            protocolManager.sendServerPacket(player, packet);
+        } catch (Exception e) {
+            Bukkit.getLogger().warning("홀로그램 위치 업데이트 실패: " + e.getMessage());
+        }
+    }
+
+    public void updateHologramText(Player player, String newText) {
+        UUID playerId = player.getUniqueId();
+        if (!entityIds.containsKey(playerId)) return;
+
+        try {
+            protocolManager.sendServerPacket(player, createMetadataPacket(entityIds.get(playerId), newText));
+        } catch (Exception e) {
+            Bukkit.getLogger().warning("홀로그램 텍스트 업데이트 실패: " + e.getMessage());
+        }
+    }
+
+    private PacketContainer createSpawnPacket(int entityId, Location location) {
+        PacketContainer packet = protocolManager.createPacket(PacketType.Play.Server.SPAWN_ENTITY);
+        packet.getIntegers().write(0, entityId);
+        packet.getEntityTypeModifier().write(0, EntityType.ARMOR_STAND);
+        packet.getDoubles()
+                .write(0, location.getX())
+                .write(1, location.getY())
+                .write(2, location.getZ());
+        return packet;
+    }
+
+    private PacketContainer createMetadataPacket(int entityId, String text) {
+        PacketContainer packet = protocolManager.createPacket(PacketType.Play.Server.ENTITY_METADATA);
+        packet.getIntegers().write(0, entityId);
+
+        WrappedDataWatcher watcher = new WrappedDataWatcher();
+        watcher.setObject(0, (byte) 0x20); // Invisible
+        watcher.setObject(2, text); // Custom name
+        watcher.setObject(3, true); // Custom name visible
+        watcher.setObject(5, true); // No gravity
+
+        packet.getWatchableCollectionModifier().write(0, watcher.getWatchableObjects());
+        return packet;
     }
 }

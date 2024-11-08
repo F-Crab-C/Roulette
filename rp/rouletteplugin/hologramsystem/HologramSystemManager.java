@@ -8,11 +8,13 @@ public class HologramSystemManager {
     private RouletteWheel rouletteWheel;
     private RouletteBall rouletteBall;
     private RouletteAnimation rouletteAnimation;
+    private final HologramManager hologramManager;
     private static HologramSystemManager instance;
     private final Plugin plugin;
 
     private HologramSystemManager(Plugin plugin) {
         this.plugin = plugin;
+        this.hologramManager = new HologramManager();
     }
 
     public static HologramSystemManager getInstance(Plugin plugin) {
@@ -23,12 +25,11 @@ public class HologramSystemManager {
     }
 
     public void initializeHologramSystem(Location location) {
-        this.rouletteWheel = new RouletteWheel(location);
-        this.rouletteBall = new RouletteBall(location.clone().add(0, 0.5, 0));
+        this.rouletteWheel = new RouletteWheel(hologramManager, location);
+        this.rouletteBall = new RouletteBall(hologramManager, location.clone().add(0, 0.5, 0));
         this.rouletteAnimation = new RouletteAnimation(plugin, rouletteWheel, rouletteBall);
     }
 
-    // 게임 관련 메서드들
     public void startGame(Player player) {
         rouletteWheel.createWheel(player);
         rouletteBall.spawn(player);
@@ -40,5 +41,9 @@ public class HologramSystemManager {
 
     public void stopSpinning(Player player, int finalNumber) {
         rouletteAnimation.stopSpin(player, finalNumber);
+    }
+
+    public HologramManager getHologramManager() {
+        return hologramManager;
     }
 }
