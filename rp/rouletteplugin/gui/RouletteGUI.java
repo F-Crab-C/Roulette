@@ -99,45 +99,34 @@ public class RouletteGUI {
     private static final String COLOR_GUI_TITLE = "§f§l색상 선택";
 
     public void openColorGUI(Player player) {
-        Inventory inv = Bukkit.createInventory(null, MAIN_GUI_SIZE, COLOR_GUI_TITLE);
+        Inventory inv = Bukkit.createInventory(null, 27, "§f§l색상 선택");
 
         // 빨강 선택
-        ItemStack redButton = createGuiItem(
-                Material.RED_WOOL,
+        ItemStack redItem = createGuiItem(Material.RED_WOOL,
                 "§c빨강",
                 "§7승리시 2배",
-                "§7현재 베팅금액: §e" + (gameManager.getPlayerBet(player.getUniqueId()) != null ?
-                        String.format("%,d", (long)gameManager.getPlayerBet(player.getUniqueId()).getAmount()) : "설정 필요")
-        );
+                "§7클릭하여 선택");
 
         // 검정 선택
-        ItemStack blackButton = createGuiItem(
-                Material.BLACK_WOOL,
+        ItemStack blackItem = createGuiItem(Material.BLACK_WOOL,
                 "§0검정",
                 "§7승리시 2배",
-                "§7현재 베팅금액: §e" + (gameManager.getPlayerBet(player.getUniqueId()) != null ?
-                        String.format("%,d", (long)gameManager.getPlayerBet(player.getUniqueId()).getAmount()) : "설정 필요")
-        );
+                "§7클릭하여 선택");
 
         // 초록 선택
-        ItemStack greenButton = createGuiItem(
-                Material.LIME_WOOL,
+        ItemStack greenItem = createGuiItem(Material.LIME_WOOL,
                 "§a초록",
                 "§7승리시 14배",
-                "§7현재 베팅금액: §e" + (gameManager.getPlayerBet(player.getUniqueId()) != null ?
-                        String.format("%,d", (long)gameManager.getPlayerBet(player.getUniqueId()).getAmount()) : "설정 필요")
-        );
+                "§7클릭하여 선택");
 
-        inv.setItem(11, redButton);
-        inv.setItem(13, blackButton);
-        inv.setItem(15, greenButton);
+        inv.setItem(11, redItem);
+        inv.setItem(13, blackItem);
+        inv.setItem(15, greenItem);
 
         // 돌아가기 버튼
-        ItemStack backButton = createGuiItem(
-                Material.BARRIER,
+        ItemStack backButton = createGuiItem(Material.BARRIER,
                 "§c돌아가기",
-                "§7메인 메뉴로 돌아갑니다"
-        );
+                "§7메인 메뉴로 돌아갑니다");
         inv.setItem(26, backButton);
 
         player.openInventory(inv);
