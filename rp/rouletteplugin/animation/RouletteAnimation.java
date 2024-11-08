@@ -4,9 +4,11 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -14,12 +16,16 @@ import rp.rouletteplugin.Main;
 import rp.rouletteplugin.game.RouletteColor;
 import rp.rouletteplugin.game.PlayerBet;
 
+import java.util.Random;
+
 public class RouletteAnimation {
     private final Main plugin;
     private static final int GUI_SIZE = 18;
     private static final String GUI_TITLE = "§6§l룰렛 게임";
-    private static final int MAX_POSITION = 8;
     private static final int MIN_POSITION = 0;
+    private static final int MAX_POSITION = 8;
+    private static final int MIN_TICKS = 30; // 최소 진행 시간
+    private static final int MAX_TICKS = 50; // 최대 진행 시간
 
     public RouletteAnimation(Main plugin) {
         this.plugin = plugin;
@@ -27,37 +33,131 @@ public class RouletteAnimation {
 
     public void playRouletteAnimation(Player player, RouletteColor resultColor, Runnable onComplete) {
         Inventory inv = Bukkit.createInventory(null, GUI_SIZE, GUI_TITLE);
-        setupColorPane(inv);
+        setupInitialInventory(inv);
         player.openInventory(inv);
 
-        // 결과 색상에 따른 최종 위치 결정
-        final int finalPosition = getFinalPosition(resultColor);
+        // 랜덤한 종료 시간 설정
+        final int endTick = MIN_TICKS + new Random().nextInt(MAX_TICKS - MIN_TICKS);
 
         new BukkitRunnable() {
             private int tick = 0;
             private int position = 0;
-            private int direction = 1;
+            private boolean isForward = true;
             private boolean isEnding = false;
+            private int finalPosition = -1;
 
             @Override
             public void run() {
-                if (tick >= 40 || (isEnding && position == finalPosition)) {
+                // 종료 조건 체크
+                if (tick >= endTick && finalPosition != -1 && position == finalPosition) {
                     finishAnimation(player, resultColor, onComplete);
                     this.cancel();
                     return;
                 }
 
-                // ... 애니메이션 로직 ...
-
-                // 마지막 몇 틱에서는 결과 위치로 이동
-                if (tick >= 35) {
-                    isEnding = true;
-                    direction = (position < finalPosition) ? 1 : -1;
+                // 이전 공 제거
+                if (position >= 0 && position < 9) {
+                    inv.setItem(position, createEmptyPane());
                 }
+
+                // 방향 전환 및 위치 업데이트
+                if (position >= 8) {
+                    isForward = false;
+                } else if (position <= 0) {
+                    isForward = true;
+                }
+
+                // 종료 시점에 도달하면 결과 위치 결정
+                if (tick >= endTick && finalPosition == -1) {
+                    finalPosition = calculateFinalPosition(resultColor);
+                }
+
+                // 위치 업데이트
+                position += isForward ? 1 : -1;
+
+                // 새 위치에 공 배치
+                inv.setItem(position, createBall());
+
+                // 효과음
+                playSound(player, position);
 
                 tick++;
             }
         }.runTaskTimer(plugin, 0L, 2L);
+    }
+
+    private void setupInitialInventory(Inventory inv) {
+        // 첫 줄 비우기
+        for (int i = 0; i < 9; i++) {
+            inv.setItem(i, createEmptyPane());
+        }
+        // 두 번째 줄 색상 설정
+        setupColorPane(inv);
+    }
+
+    private int calculateFinalPosition(RouletteColor color) {
+        Random random = new Random();
+        switch (color) {
+            case RED:
+                return random.nextInt(2) * 2 + 1; // 1, 3, 5, 7 중 랜덤
+            case BLACK:
+                return random.nextInt(2) * 2 + 2; // 2, 4, 6, 8 중 랜덤
+            case GREEN:
+                return 4; // 중앙 위치
+            default:
+                return 0;
+        }
+    }
+    private void setupColorPane(Inventory inv) {
+        // 두 번째 줄 색상 배치 (9-17번 슬롯)
+        for (int i = 9; i < 18; i++) {
+            ItemStack pane;
+            if (i == 13) { // 중앙 초록
+                pane = createColorPane(Material.LIME_STAINED_GLASS_PANE, "§a초록");
+            } else if ((i - 9) % 2 == 0) { // 빨강
+                pane = createColorPane(Material.RED_STAINED_GLASS_PANE, "§c빨강");
+            } else { // 검정
+                pane = createColorPane(Material.BLACK_STAINED_GLASS_PANE, "§0검정");
+            }
+            inv.setItem(i, pane);
+        }
+    }
+
+    private void playSound(Player player, int position) {
+        if (position == 0 || position == 8) {
+            player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 1, 1);
+        } else {
+            player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1, 1);
+        }
+    }
+
+    private ItemStack createBall() {
+        ItemStack ball = new ItemStack(Material.FIREWORK_STAR, 1);
+        ItemMeta meta = ball.getItemMeta();
+        meta.setDisplayName("§f⚪");  // 더 잘 보이는 유니코드 문자 사용
+
+        // 아이템 발광 효과 추가
+        meta.addEnchant(Enchantment.DURABILITY, 1, true);
+        meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+
+        ball.setItemMeta(meta);
+        return ball;
+    }
+
+    private ItemStack createColorPane(Material material, String name) {
+        ItemStack pane = new ItemStack(material);
+        ItemMeta meta = pane.getItemMeta();
+        meta.setDisplayName(name);
+        pane.setItemMeta(meta);
+        return pane;
+    }
+
+    private ItemStack createEmptyPane() {
+        ItemStack pane = new ItemStack(Material.WHITE_STAINED_GLASS_PANE, 1);
+        ItemMeta meta = pane.getItemMeta();
+        meta.setDisplayName(" ");
+        pane.setItemMeta(meta);
+        return pane;
     }
 
     private int getFinalPosition(RouletteColor color) {
@@ -78,57 +178,6 @@ public class RouletteAnimation {
             showResult(player, resultColor, betAmount, winAmount);
         }
         onComplete.run();
-    }
-
-    private int checkDirection(int position, int direction) {
-        if (position >= MAX_POSITION) { // 오른쪽 벽
-            return -1;
-        } else if (position <= 0) { // 왼쪽 벽
-            return 1;
-        }
-        return direction;
-    }
-
-    private void clearPreviousPosition(Inventory inv, int position) {
-        if (position >= 0 && position < 9) {
-            inv.setItem(position, null);
-        }
-    }
-
-    private void setupColorPane(Inventory inv) {
-        // 두 번째 줄에 색상 패널 배치 (9-17번 슬롯)
-        for (int i = 9; i < 18; i++) {
-            ItemStack pane;
-            if (i == 13) { // 중앙에 초록
-                pane = createColorPane(Material.LIME_STAINED_GLASS_PANE, "§a초록");
-            } else if (i % 2 == 0) { // 짝수 위치에 빨강
-                pane = createColorPane(Material.RED_STAINED_GLASS_PANE, "§c빨강");
-            } else { // 홀수 위치에 검정
-                pane = createColorPane(Material.BLACK_STAINED_GLASS_PANE, "§0검정");
-            }
-            inv.setItem(i, pane);
-        }
-    }
-
-    private ItemStack createBall() {
-        ItemStack ball = new ItemStack(Material.FIREWORK_STAR, 1);
-        ItemMeta meta = ball.getItemMeta();
-        meta.setDisplayName("§f⚪");  // 더 잘 보이는 유니코드 문자 사용
-
-        // 아이템 발광 효과 추가
-        meta.addEnchant(org.bukkit.enchantments.Enchantment.DURABILITY, 1, true);
-        meta.addItemFlags(org.bukkit.inventory.ItemFlag.HIDE_ENCHANTS);
-
-        ball.setItemMeta(meta);
-        return ball;
-    }
-
-    private ItemStack createColorPane(Material material, String name) {
-        ItemStack pane = new ItemStack(material);
-        ItemMeta meta = pane.getItemMeta();
-        meta.setDisplayName(name);
-        pane.setItemMeta(meta);
-        return pane;
     }
 
     private void showResult(Player player, RouletteColor resultColor, double betAmount, double winAmount) {
