@@ -101,34 +101,37 @@ public class GUIListener implements Listener {
     private void handleColorGUIClick(Player player, ItemStack clickedItem) {
         if (clickedItem == null) return;
 
+        // 디버그 메시지 추가
+        plugin.getLogger().info("Color GUI Click - Item: " + clickedItem.getType());
+
         if (clickedItem.getType() == Material.BARRIER) {
             plugin.getRouletteGUI().openMainGUI(player);
             return;
         }
 
         RouletteColor selectedColor = null;
-        Material type = clickedItem.getType();
-
-        // Material 타입 확인 로그 추가
-        plugin.getLogger().info("Clicked material: " + type.name());
-
-        // 색상 선택 로직 수정
-        if (type == Material.RED_WOOL) {
-            selectedColor = RouletteColor.RED;
-        } else if (type == Material.BLACK_WOOL) {
-            selectedColor = RouletteColor.BLACK;
-        } else if (type == Material.LIME_WOOL) {
-            selectedColor = RouletteColor.GREEN;
+        switch (clickedItem.getType()) {
+            case RED_WOOL:
+                selectedColor = RouletteColor.RED;
+                plugin.getLogger().info("Selected RED");
+                break;
+            case BLACK_WOOL:
+                selectedColor = RouletteColor.BLACK;
+                plugin.getLogger().info("Selected BLACK");
+                break;
+            case LIME_WOOL:
+                selectedColor = RouletteColor.GREEN;
+                plugin.getLogger().info("Selected GREEN");
+                break;
         }
 
         if (selectedColor != null) {
             gameManager.setPlayerBetColor(player.getUniqueId(), selectedColor);
+            // 디버그 메시지 추가
+            plugin.getLogger().info("Player " + player.getName() + " bet color set to: " + selectedColor);
+
             player.sendMessage("§a" + selectedColor.getDisplayName() + " §f색상을 선택했습니다.");
             player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
-
-            // 디버그 메시지 추가
-            plugin.getLogger().info("Player " + player.getName() + " selected color: " + selectedColor.name());
-
             plugin.getRouletteGUI().openMainGUI(player);
         }
     }
