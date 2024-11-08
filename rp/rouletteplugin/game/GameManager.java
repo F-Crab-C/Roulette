@@ -38,13 +38,8 @@ public class GameManager {
     }
 
     public void setPlayerBetColor(UUID playerUUID, RouletteColor color) {
-        try {
-            PlayerBet bet = playerBets.computeIfAbsent(playerUUID,
-                    k -> new PlayerBet(playerUUID, 0, null));
-            bet.setColor(color);
-        } catch (Exception e) {
-            plugin.getLogger().warning("베팅 색상 설정 중 오류 발생: " + e.getMessage());
-        }
+        PlayerBet bet = playerBets.computeIfAbsent(playerUUID, k -> new PlayerBet(playerUUID, 0, null));
+        bet.setColor(color);
     }
 
     public boolean isPlayerBetComplete(UUID playerUUID) {
