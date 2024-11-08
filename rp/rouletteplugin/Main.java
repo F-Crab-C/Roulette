@@ -36,6 +36,9 @@ public class Main extends JavaPlugin {
 
         // 리스너 등록
         getServer().getPluginManager().registerEvents(new GUIListener(this, gameManager), this);
+        getLogger().info("Registering GUIListener...");
+        getServer().getPluginManager().registerEvents(new GUIListener(this, gameManager), this);
+        getLogger().info("GUIListener registered successfully!");
 
         // 명령어 등록 (추후 구현)
         getCommand("roulette").setExecutor(new RouletteCommand(this));

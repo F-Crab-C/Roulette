@@ -23,24 +23,35 @@ public class GUIListener implements Listener {
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
+        // 기본 디버그 메시지 추가
+        plugin.getLogger().info("Inventory clicked: " + event.getView().getTitle());
+
         if (!(event.getWhoClicked() instanceof Player)) return;
 
         Player player = (Player) event.getWhoClicked();
         ItemStack clickedItem = event.getCurrentItem();
 
         if (clickedItem == null) return;
+
+        // 클릭된 아이템 정보 로깅
+        plugin.getLogger().info("Clicked item: " + clickedItem.getType());
+
         event.setCancelled(true);
 
         String title = event.getView().getTitle();
+        plugin.getLogger().info("GUI Title: " + title);
 
-        switch (title) {
+        switch(title) {
             case "§6§l룰렛 게임":
+                plugin.getLogger().info("Main GUI clicked");
                 handleMainGUIClick(player, clickedItem);
                 break;
             case "§e§l베팅 금액 설정":
+                plugin.getLogger().info("Amount GUI clicked");
                 handleAmountGUIClick(player, clickedItem);
                 break;
             case "§f§l색상 선택":
+                plugin.getLogger().info("Color GUI clicked");
                 handleColorGUIClick(player, clickedItem);
                 break;
         }
