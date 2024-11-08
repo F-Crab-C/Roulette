@@ -5,6 +5,7 @@ import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -25,29 +26,27 @@ public class HologramManager {
     }
 
     public void createHologram(Player player, Location location, String text) {
-        // ArmorStand 패킷 생성
         PacketContainer packet = protocolManager.createPacket(PacketType.Play.Server.SPAWN_ENTITY);
 
         int entityId = ENTITY_ID++;
         entityIds.put(player.getUniqueId(), entityId);
 
         packet.getIntegers()
-                .write(0, entityId) // Entity ID
-                .write(1, EntityType.ARMOR_STAND.getTypeId()); // Entity Type
+                .write(0, entityId)
+                .write(1, EntityType.ARMOR_STAND.getTypeId());
 
         packet.getDoubles()
                 .write(0, location.getX())
                 .write(1, location.getY())
                 .write(2, location.getZ());
 
-        // 메타데이터 패킷 생성
         PacketContainer metadata = protocolManager.createPacket(PacketType.Play.Server.ENTITY_METADATA);
         metadata.getIntegers().write(0, entityId);
 
         WrappedDataWatcher watcher = new WrappedDataWatcher();
-        watcher.setObject(0, (byte) 0x20); // Invisible
-        watcher.setObject(2, text); // Custom name
-        watcher.setObject(3, (byte) 1); // Custom name visible
+        watcher.setObject(0, (byte) 0x20);
+        watcher.setObject(2, text);
+        watcher.setObject(3, (byte) 1);
 
         metadata.getWatchableCollectionModifier().write(0, watcher.getWatchableObjects());
 
@@ -55,7 +54,10 @@ public class HologramManager {
             protocolManager.sendServerPacket(player, packet);
             protocolManager.sendServerPacket(player, metadata);
         } catch (InvocationTargetException e) {
-            e.printStackTrace();
+            // 단순 printStackTrace() 대신 더 구체적인 에러 처리
+            Bukkit.getLogger().warning("홀로그램 생성 중 오류 발생: " + e.getCause().getMessage());
+            // 또는 플러그인 로거 사용
+            plugin.getLogger().warning("홀로그램 생성 실패: " + player.getName());
         }
     }
 
@@ -68,29 +70,14 @@ public class HologramManager {
 
         try {
             protocolManager.sendServerPacket(player, packet);
+            protocolManager.sendServerPacket(player, metadata);
         } catch (InvocationTargetException e) {
-            e.printStackTrace();
+            // 단순 printStackTrace() 대신 더 구체적인 에러 처리
+            Bukkit.getLogger().warning("홀로그램 생성 중 오류 발생: " + e.getCause().getMessage());
+            // 또는 플러그인 로거 사용
+            plugin.getLogger().warning("홀로그램 생성 실패: " + player.getName());
         }
 
         entityIds.remove(playerId);
-    }
-
-    public void updateHologramText(Player player, String newText) {
-        UUID playerId = player.getUniqueId();
-        if (!entityIds.containsKey(playerId)) return;
-
-        PacketContainer metadata = protocolManager.createPacket(PacketType.Play.Server.ENTITY_METADATA);
-        metadata.getIntegers().write(0, entityIds.get(playerId));
-
-        WrappedDataWatcher watcher = new WrappedDataWatcher();
-        watcher.setObject(2, newText);
-
-        metadata.getWatchableCollectionModifier().write(0, watcher.getWatchableObjects());
-
-        try {
-            protocolManager.sendServerPacket(player, metadata);
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        }
     }
 }

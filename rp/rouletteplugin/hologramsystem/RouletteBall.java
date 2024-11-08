@@ -11,16 +11,14 @@ public class RouletteBall {
     private Vector velocity;
     private boolean isMoving;
     private int entityId;
-    private static final double BALL_HEIGHT = 0.5; // 공의 기본 높이
+    private static final double BALL_HEIGHT = 0.3; // 공의 기본 높이
     private static final double BALL_ORBIT_RADIUS = 1.8; // 공의 회전 반경
 
     private final double GRAVITY = 0.05;
     private final double FRICTION = 0.98;
 
-    public RouletteBall(Location startLocation) {
-        this.currentLocation = startLocation.clone().add(0, BALL_HEIGHT, 0);
-        this.velocity = new Vector(0, 0, 0);
-        this.isMoving = false;
+    public RouletteBall(HologramManager hologramManager, Location startLocation) {
+        this.hologramManager = hologramManager;
     }
 
     public void spawn(Player player) {

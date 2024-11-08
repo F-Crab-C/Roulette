@@ -1,6 +1,6 @@
 package rp.rouletteplugin.hologramsystem;
 
-import org.apache.maven.artifact.repository.metadata.Plugin;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 

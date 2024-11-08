@@ -19,7 +19,7 @@ public class RouletteAnimation {
         this.rouletteWheel = rouletteWheel;
         this.rouletteBall = rouletteBall;
         this.isSpinning = false;
-        this.spinSpeed = 0.2; // 초기 회전 속도
+        this.spinSpeed = 0.15; // 초기 회전 속도
         this.currentAngle = 0;
     }
 

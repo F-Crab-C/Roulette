@@ -2,11 +2,13 @@ package rp.rouletteplugin;
 
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Location;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import rp.rouletteplugin.game.GameManager;
 import rp.rouletteplugin.gui.RouletteGUI;
 import rp.rouletteplugin.gui.GUIListener;
+import rp.rouletteplugin.hologramsystem.HologramManager;
 import rp.rouletteplugin.hologramsystem.RouletteAnimation;
 import rp.rouletteplugin.hologramsystem.RouletteBall;
 import rp.rouletteplugin.hologramsystem.RouletteWheel;
@@ -46,11 +48,14 @@ public class Main extends JavaPlugin {
 
         getLogger().info("룰렛 플러그인이 활성화되었습니다!");
 
-        Location rouletteLocation = // 룰렛이 생성될 위치 설정
-                this.rouletteWheel = new RouletteWheel(rouletteLocation);
+        Location rouletteLocation = new Location(getServer().getWorlds().get(0), 0, 0, 0);
+        HologramManager hologramManager = new HologramManager();
+        RouletteWheel rouletteWheel = new RouletteWheel(hologramManager, rouletteLocation);
+    }
 
-        this.rouletteBall = new RouletteBall(rouletteLocation.clone().add(0, 0.5, 0));
-        this.rouletteAnimation = new RouletteAnimation(this, rouletteWheel, rouletteBall);
+    public Location createRouletteLocation(Player player) {
+        Location playerLoc = player.getLocation();
+        return playerLoc.clone().add(0, 2, 0); // 플레이어 위 2블록
     }
 
     @Override
