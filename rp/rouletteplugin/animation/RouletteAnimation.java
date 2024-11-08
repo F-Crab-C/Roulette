@@ -18,6 +18,8 @@ public class RouletteAnimation {
     private final Main plugin;
     private static final int GUI_SIZE = 18;
     private static final String GUI_TITLE = "§6§l룰렛 게임";
+    private static final int MAX_POSITION = 8;
+    private static final int MIN_POSITION = 0;
 
     public RouletteAnimation(Main plugin) {
         this.plugin = plugin;
@@ -28,43 +30,69 @@ public class RouletteAnimation {
         setupColorPane(inv);
         player.openInventory(inv);
 
+        // 결과 색상에 따른 최종 위치 결정
+        final int finalPosition = getFinalPosition(resultColor);
+
         new BukkitRunnable() {
             private int tick = 0;
             private int position = 0;
+            private int direction = 1;
+            private boolean isEnding = false;
 
             @Override
             public void run() {
-                if (tick >= 40) {
-                    PlayerBet bet = plugin.getGameManager().getPlayerBet(player.getUniqueId());
-                    if (bet != null) {
-                        double betAmount = bet.getAmount();
-                        double winAmount = bet.getColor() == resultColor ?
-                                betAmount * (resultColor == RouletteColor.GREEN ? 14 : 2) : 0;
-                        showResult(player, resultColor, betAmount, winAmount);
-                    }
-                    onComplete.run();
+                if (tick >= 40 || (isEnding && position == finalPosition)) {
+                    finishAnimation(player, resultColor, onComplete);
                     this.cancel();
                     return;
                 }
 
-                // 이전 위치의 공 제거
-                if (position > 0) {
-                    inv.setItem(position - 1 % 9, null);
+                // ... 애니메이션 로직 ...
+
+                // 마지막 몇 틱에서는 결과 위치로 이동
+                if (tick >= 35) {
+                    isEnding = true;
+                    direction = (position < finalPosition) ? 1 : -1;
                 }
 
-                // 새 위치에 공 배치 (첫 번째 줄에만)
-                ItemStack ball = createBall();
-                inv.setItem(position % 9, ball);
-
-                // 효과음
-                if (tick % 2 == 0) {
-                    player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1, 1);
-                }
-
-                position++;
                 tick++;
             }
         }.runTaskTimer(plugin, 0L, 2L);
+    }
+
+    private int getFinalPosition(RouletteColor color) {
+        switch (color) {
+            case RED: return 1;    // 빨간색 구역
+            case BLACK: return 3;  // 검은색 구역
+            case GREEN: return 4;  // 초록색 구역 (중앙)
+            default: return 0;
+        }
+    }
+
+    private void finishAnimation(Player player, RouletteColor resultColor, Runnable onComplete) {
+        PlayerBet bet = plugin.getGameManager().getPlayerBet(player.getUniqueId());
+        if (bet != null) {
+            double betAmount = bet.getAmount();
+            double winAmount = bet.getColor() == resultColor ?
+                    betAmount * (resultColor == RouletteColor.GREEN ? 14 : 2) : 0;
+            showResult(player, resultColor, betAmount, winAmount);
+        }
+        onComplete.run();
+    }
+
+    private int checkDirection(int position, int direction) {
+        if (position >= MAX_POSITION) { // 오른쪽 벽
+            return -1;
+        } else if (position <= 0) { // 왼쪽 벽
+            return 1;
+        }
+        return direction;
+    }
+
+    private void clearPreviousPosition(Inventory inv, int position) {
+        if (position >= 0 && position < 9) {
+            inv.setItem(position, null);
+        }
     }
 
     private void setupColorPane(Inventory inv) {
@@ -83,9 +111,14 @@ public class RouletteAnimation {
     }
 
     private ItemStack createBall() {
-        ItemStack ball = new ItemStack(Material.FIREWORK_STAR);
+        ItemStack ball = new ItemStack(Material.FIREWORK_STAR, 1);
         ItemMeta meta = ball.getItemMeta();
-        meta.setDisplayName("§f●");
+        meta.setDisplayName("§f⚪");  // 더 잘 보이는 유니코드 문자 사용
+
+        // 아이템 발광 효과 추가
+        meta.addEnchant(org.bukkit.enchantments.Enchantment.DURABILITY, 1, true);
+        meta.addItemFlags(org.bukkit.inventory.ItemFlag.HIDE_ENCHANTS);
+
         ball.setItemMeta(meta);
         return ball;
     }

@@ -31,10 +31,20 @@ public class GameManager {
 
     public void setPlayerBetAmount(UUID playerUUID, double amount) {
         try {
-            PlayerBet bet = playerBets.computeIfAbsent(playerUUID,
-                    k -> new PlayerBet(playerUUID, 0, null));
-            bet.setAmount(amount);
-            plugin.getLogger().info("Bet amount set for " + playerUUID + ": " + amount);
+            // 디버그 로그 추가
+            plugin.getLogger().info("Setting bet amount for " + playerUUID + ": " + amount);
+
+            // 기존 베팅 정보 확인
+            PlayerBet currentBet = playerBets.get(playerUUID);
+            if (currentBet == null) {
+                currentBet = new PlayerBet(playerUUID, amount, null);
+                playerBets.put(playerUUID, currentBet);
+            } else {
+                currentBet.setAmount(amount);
+            }
+
+            // 저장 확인
+            plugin.getLogger().info("Bet amount set successfully. Current bet: " + playerBets.get(playerUUID).getAmount());
         } catch (Exception e) {
             plugin.getLogger().warning("베팅 금액 설정 중 오류 발생: " + e.getMessage());
         }
@@ -53,8 +63,9 @@ public class GameManager {
 
     public boolean isPlayerBetComplete(UUID playerUUID) {
         PlayerBet bet = playerBets.get(playerUUID);
-        boolean complete = bet != null && bet.getAmount() > 0 && bet.getColor() != null;
-        plugin.getLogger().info("Checking bet completion for " + playerUUID + ": " + complete);
+        boolean complete = bet != null && bet.getAmount() > 0;
+        plugin.getLogger().info("Checking bet completion for " + playerUUID +
+                ": " + complete + " (amount: " + (bet != null ? bet.getAmount() : "null") + ")");
         return complete;
     }
 
